@@ -40,4 +40,21 @@ public class NeuralMath {
         return rdm.doubles(length, -0.5, 0.5).toArray();
     }
     
+    /**
+     * Gibt den halben quadratischen Fehler zwischen den erwarteten und den
+     * erhaltenen Werten zurück.
+     *
+     * @param actual Erhaltene Werte
+     * @param expected Erwartete/Korrekte Werte
+     * @return Fehlerrate
+     */
+    public static double getError(double[] actual, double[] expected) {
+        if(actual.length != expected.length)
+            throw new IllegalArgumentException("Die Längen der Arrays sind unterschiedlich.");
+        double sum = 0.0;
+        for(int i = 0; i < actual.length; i++)
+            sum += Math.pow(expected[i] - actual[i], 2);
+        return sum / 2;
+    }
+    
 }
