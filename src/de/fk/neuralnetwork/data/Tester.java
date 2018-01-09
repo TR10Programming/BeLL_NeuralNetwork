@@ -1,38 +1,30 @@
 package de.fk.neuralnetwork.data;
 
+import de.fk.neuralnetwork.NeuralNetwork;
+import static de.fk.neuralnetwork.data.ImageContainer.MNIST_IMAGE_FILE_MAGIC_NUMBER;
+import static de.fk.neuralnetwork.data.ImageContainer.MNIST_LABEL_FILE_MAGIC_NUMBER;
+import de.fk.neuralnetwork.math.NeuralMath;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
  * @author Felix
  */
-public class ImageContainer {
+public class Tester {
     
     public static final int MNIST_IMAGE_FILE_MAGIC_NUMBER = 2051,
             MNIST_LABEL_FILE_MAGIC_NUMBER = 2049;
 
-    private static ArrayList<LabeledImage> images = new ArrayList<>();
-    
-    public static void clear() {
-        images.clear();
-    }
-    
-    public static List<LabeledImage> getImages() {
-        return images;
-    }
-    
-    public static void readFromMnist(String imageFile, String labelFile, int maxImages) throws IOException {
+    public static TestResult testFromMnist(String imageFile, String labelFile, NeuralNetwork nn, int maxImages) throws IOException {
+        double error = 0, accuracy = 0;
+        
+        ArrayList<LabeledImage> images = new ArrayList<>();
         //ImageFile einlesen und überprüfen
         ByteBuffer imageBytes = ByteBuffer.wrap(Files.readAllBytes(Paths.get(imageFile)));
         int magicNumber = imageBytes.getInt();
@@ -40,7 +32,8 @@ public class ImageContainer {
             throw new IOException("Die Datei '" + imageFile + "' beginnt mit der Magic Number " + magicNumber + ". (Erwartet: " + MNIST_IMAGE_FILE_MAGIC_NUMBER + ")");
         int numImg = Math.min(maxImages, imageBytes.getInt()),
                 numRows = imageBytes.getInt(),
-                numCols = imageBytes.getInt();
+                numCols = imageBytes.getInt(),
+                imgSize = numRows * numCols;
         //LabelFile einlesen und überprüfen
         ByteBuffer labelBytes = ByteBuffer.wrap(Files.readAllBytes(Paths.get(labelFile)));
         magicNumber = labelBytes.getInt();
@@ -51,13 +44,18 @@ public class ImageContainer {
             throw new IOException("Die beiden Dateien passen nicht zusammen: " + imageFile + " enthält " + numImg + " Bilder, aber " + labelFile + " enthält " + numLabels + " Labels.");
         //Bilder und Labels einlesen & zusammenfügen
         for(int i = 0; i < numImg; i++) {
-            double[][] data = new double[numRows][numCols];
-            for(int r = 0; r < numRows; r++)
-                for(int c = 0; c < numCols; c++)
-                    data[r][c] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
+            double[] flatData = new double[numRows * numCols];
+            for(int j = 0; j < imgSize; j++)
+                    flatData[j] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
             int label = labelBytes.get() & 0xFF; //unsigned
-            images.add(new LabeledImage(data, label));
+            double[] out = nn.trigger(flatData);
+            error += NeuralMath.getError(out, NeuralMath.getOutputForLabel(label, nn.getOutputLayer().getNeurons().length));
+            accuracy += (NeuralMath.getPredictedLabel(out) == label) ? 1.0 : 0.0;
+            //System.out.println("Predicted: " + NeuralMath.getPredictedLabel(out) + " Actual: " + label);
         }
+        error /= (double) numImg;
+        accuracy /= (double) numImg;
+        return new TestResult(error, accuracy);
     }
     
     public static int validateMnistImageFile(String imageFile) throws IOException {
@@ -81,6 +79,25 @@ public class ImageContainer {
         int numLabels = dis.readInt();
         dis.close();
         return numLabels;
+    }
+    
+    public static class TestResult {
+        
+        private double error, accuracy;
+
+        public TestResult(double error, double accuracy) {
+            this.error = error;
+            this.accuracy = accuracy;
+        }
+
+        public double getError() {
+            return error;
+        }
+
+        public double getAccuracy() {
+            return accuracy;
+        }
+        
     }
     
 }

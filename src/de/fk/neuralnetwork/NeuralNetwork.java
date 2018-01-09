@@ -2,17 +2,23 @@ package de.fk.neuralnetwork;
 
 import de.fk.neuralnetwork.math.ActivationFunction;
 import de.fk.neuralnetwork.math.NeuralMath;
-import java.util.Arrays;
+import java.io.Serializable;
 
 /**
  *
  * @author Felix
  */
-public class NeuralNetwork {
+public class NeuralNetwork implements Serializable {
+    
+    private static final long serialVersionUID = /*-336732427642969125L*/655591235934461712L;
     
     private NeuralLayer[] layers;
     private int inputNeurons, outputNeurons;
     private boolean inputBias;
+    
+    public void sout() {
+        System.out.println(serialVersionUID);
+    }
     
     /**
      * Generiert ein neuronales Netz mit der gegebenen Anzahl an Layern und
@@ -57,6 +63,28 @@ public class NeuralNetwork {
         //Output Layer
         layers[hiddenLayersCount] = new NeuralLayer(neuronsPerHiddenLayer + 1, outputNeurons, false);
         layers[hiddenLayersCount].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
+        this.inputNeurons = inputNeurons;
+        this.outputNeurons = outputNeurons;
+    }
+    
+    /**
+     * Generiert ein neuronales Netz mit den übergebenen Anzahlen an Neuronen.
+     * Aller Layer außer dem Output Layer erhalten zusätzlich einen Bias.
+     *
+     * @param inputNeurons Anzahl der Eingabeneuronen
+     * @param outputNeurons Anzahl der Ausgabeneuronen
+     * @param neurons Liste mit Anzahlen der Hidden Layer Neuronen (mind. 1)
+     */
+    public NeuralNetwork(int inputNeurons, int outputNeurons, int... neurons) {
+        layers = new NeuralLayer[neurons.length + 1];
+        inputBias = true;
+        //First Hidden Layer
+        layers[0] = new NeuralLayer(inputNeurons + 1, neurons[0], true);
+        //Other Hidden Layers
+        for(int i = 1; i < neurons.length; i++) layers[i] = new NeuralLayer(neurons[i - 1] + 1, neurons[i], true);
+        //Output Layer
+        layers[neurons.length] = new NeuralLayer(neurons[neurons.length - 1] + 1, outputNeurons, false);
+        layers[neurons.length].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
         this.inputNeurons = inputNeurons;
         this.outputNeurons = outputNeurons;
     }

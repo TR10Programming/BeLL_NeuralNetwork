@@ -1,13 +1,15 @@
 package de.fk.neuralnetwork;
 
 import de.fk.neuralnetwork.math.ActivationFunction;
+import java.io.Serializable;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  *
  * @author Felix
  */
-public class NeuralLayer {
+public class NeuralLayer implements Serializable {
     
     private Neuron[] neurons;
     private ActivationFunction act;
@@ -42,7 +44,7 @@ public class NeuralLayer {
     }
     
     public double[] getErrorDeltas() {
-        return Arrays.stream(neurons).parallel().mapToDouble(n -> n.getErrorDelta(act)).toArray();
+        return Arrays.stream(neurons).parallel().filter(n -> n instanceof BasicNeuron).mapToDouble(n -> n.getErrorDelta(act)).toArray();
     }
     
     public double getActivationAt(int pos) {
@@ -50,21 +52,29 @@ public class NeuralLayer {
     }
     
     public double[] getActivations() {
-        return Arrays.stream(neurons).parallel().mapToDouble(n -> n.getActivation()).toArray();
+        return Arrays.stream(neurons).mapToDouble(n -> n.getActivation()).toArray();
     }
     
     public void calcAccumulatorMatrices(double[] activationsBefore) {
-        for(Neuron n : neurons) if(n instanceof BasicNeuron) ((BasicNeuron) n).calcAccumulatorMatrix(activationsBefore, act);
+        Arrays.stream(neurons)
+                .parallel()
+                .filter(n -> n instanceof BasicNeuron)
+                .forEach(n -> ((BasicNeuron) n).calcAccumulatorMatrix(activationsBefore, act));
     }
     
     public void calcErrors(NeuralLayer nextLayer) {
         for(int i = 0; i < neurons.length; i++) {
             neurons[i].calcError(i, nextLayer);
         }
+        IntStream.range(0, neurons.length).parallel().forEach(i -> neurons[i].calcError(i, nextLayer));
     }
     
     public void accumulate(double learningRate, double regularizationRate) {
         for(Neuron n : neurons) if(n instanceof BasicNeuron) ((BasicNeuron) n).accumulate(learningRate, regularizationRate);
+        Arrays.stream(neurons)
+                .parallel()
+                .filter(n -> n instanceof BasicNeuron)
+                .forEach(n -> ((BasicNeuron) n).accumulate(learningRate, regularizationRate));
     }
 
 }

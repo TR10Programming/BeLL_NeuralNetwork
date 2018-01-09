@@ -1,12 +1,13 @@
 package de.fk.neuralnetwork;
 
 import de.fk.neuralnetwork.math.ActivationFunction;
+import java.io.Serializable;
 
 /**
  *
  * @author Felix
  */
-public interface Neuron {
+public interface Neuron extends Serializable {
     
     /**
      * Gibt den Ausgabewert (Activation) des Neurons zurück.

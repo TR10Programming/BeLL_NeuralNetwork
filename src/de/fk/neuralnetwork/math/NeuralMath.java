@@ -5,9 +5,12 @@ import de.fk.neuralnetwork.NeuralLayer;
 import de.fk.neuralnetwork.NeuralNetwork;
 import de.fk.neuralnetwork.Neuron;
 import de.fk.neuralnetwork.training.TrainingExample;
-import java.util.Arrays;
 import java.util.Random;
 import static java.lang.Math.log;
+import java.util.Arrays;
+import java.util.function.DoubleFunction;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -18,7 +21,7 @@ public class NeuralMath {
     private static Random rdm  = new Random(1081);
 
     /**
-     * Errechnet das Skalarprodukt des Eingabevektors und des Gewichtevektors.
+     * Multipliziert den Eingabearray mit den übergebenen Gewichten.
      * 
      * Das Gewichtearray darf größer sein als das Eingabearray, in diesem Fall 
      * werden die restlichen Gewichte zum Skalarprodukt addiert (Bias). Das
@@ -57,9 +60,11 @@ public class NeuralMath {
     public static double getError(double[] actual, double[] expected) {
         if(actual.length != expected.length)
             throw new IllegalArgumentException("Die Längen der Arrays sind unterschiedlich.");
-        double sum = 0.0;
-        for(int i = 0; i < actual.length; i++)
-            sum -= log(expected[i] == 1 ? actual[i] : (1 - actual[i]));
+        double err = 0.0, sum = 0.0;
+        for(int i = 0; i < actual.length; i++) {
+            err = -log(expected[i] == 1 ? actual[i] : (1 - actual[i]));
+            sum += Double.isFinite(err) ? err : 999999;
+        }
         return sum;
     }
     
@@ -131,5 +136,57 @@ public class NeuralMath {
         return te;
     }
     
+    /**
+     * Gibt den zu erwartenden Output für ein neuronales Netz für ein 
+     * Klassifizierungsproblem mit <code>classes</code> Klassen aus.
+     * 
+     * Dieser besteht aus einem Array der Länge <code>classes</code>
+     * gefüllt mit Nullen und einer Eins an der Stelle <code>label</code>.
+     *
+     * @param label Label
+     * @param classes Anzahl Klassen
+     * @return Erwarteter Output
+     */
+    public static double[] getOutputForLabel(int label, int classes) {
+        double[] output = new double[classes];
+        output[label] = 1.0;
+        return output;
+    }
+    
+    /**
+     * Gibt die bestimmte Klasse bzw den Index des höchsten Wertes im Array
+     * zurück.
+     *
+     * @param out Ausgabe des Neuronalen Netzes
+     * @return Bestimmte Klasse
+     */
+    public static int getPredictedLabel(double[] out) {
+        double max = 0.0;
+        int index = -1;
+        for(int i = 0; i < out.length; i++) if(out[i] > max) {
+            index = i;
+            max = out[i];
+        }
+        return index;
+    }
+    
+    /**
+     * Wandelt den übergebenen zweidimensionalen Array (Matrix) in einen
+     * eindimensionalen (Vektor) um, wobei alle Reihen der Matrix aneinander
+     * gehangen werden.
+     * 
+     * Hinweis: Es muss garantiert sein, dass der zweidimensionale Array einer
+     * Matrix der Größe m x n entspricht bzw. dass alle Arrays der zweiten
+     * Dimension dieselbe Größe aufweisen.
+     *
+     * @param in Zweidimensionaler Array
+     * @return Eindimensionaler Array
+     */
+    public static double[] flatten(double[][] in) {
+        double[] flatData = new double[in.length * in[0].length];
+        //for(int row = 0; row < in.length; row++) System.arraycopy(in[row], 0, flatData, row * in.length, in.length);
+        IntStream.range(0, in.length).parallel().forEach(row -> System.arraycopy(in[row], 0, flatData, row * in.length, in.length));
+        return flatData;
+    }
     
 }

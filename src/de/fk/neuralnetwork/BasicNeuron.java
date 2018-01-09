@@ -16,7 +16,7 @@ public class BasicNeuron implements Neuron {
     public BasicNeuron(int connectedNeurons) {
         weights = NeuralMath.generateRandomWeights(connectedNeurons);
         this.accum = Arrays.copyOf(weights, weights.length);
-        //System.out.println("Neues Neuron mit " + connectedNeurons + " Vorgängern generiert. Gewichte: " + Arrays.toString(weights));
+        //System.out.println("Neues Neuron mit " + connectedNeurons + " Vorgängern generiert.");
     }
     
     public BasicNeuron(double[] weights) {

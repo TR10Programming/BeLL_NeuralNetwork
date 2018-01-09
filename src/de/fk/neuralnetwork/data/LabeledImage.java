@@ -6,15 +6,15 @@ package de.fk.neuralnetwork.data;
  */
 public class LabeledImage {
 
-    private int[][] data;
+    private double[][] data;
     private int label;
     
-    public LabeledImage(int[][] data, int label) {
+    public LabeledImage(double[][] data, int label) {
         this.data = data;
         this.label = label;
     }
 
-    public int[][] getData() {
+    public double[][] getData() {
         return data;
     }
 
@@ -28,10 +28,10 @@ public class LabeledImage {
         sb.append("== Label: ").append(label).append(" ==");
         for(int row = 0; row < data.length; row++) {
             for(int col = 0; col < data[row].length; col++) {
-                int pixelVal = data[row][col];
+                double pixelVal = data[row][col];
                 if(pixelVal == 0) sb.append(" ");
-                else if(pixelVal < 256 / 3) sb.append(".");
-                else if(pixelVal < 2 * (256 / 3)) sb.append("x");
+                else if(pixelVal < 1.0 / 3) sb.append(".");
+                else if(pixelVal < 2.0 / 3) sb.append("x");
                 else sb.append("X");
             }
             sb.append("\n");
