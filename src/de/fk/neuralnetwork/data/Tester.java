@@ -1,8 +1,6 @@
 package de.fk.neuralnetwork.data;
 
 import de.fk.neuralnetwork.NeuralNetwork;
-import static de.fk.neuralnetwork.data.ImageContainer.MNIST_IMAGE_FILE_MAGIC_NUMBER;
-import static de.fk.neuralnetwork.data.ImageContainer.MNIST_LABEL_FILE_MAGIC_NUMBER;
 import de.fk.neuralnetwork.math.NeuralMath;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -48,12 +46,13 @@ public class Tester {
             for(int j = 0; j < imgSize; j++)
                     flatData[j] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
             int label = labelBytes.get() & 0xFF; //unsigned
-            double[] out = nn.trigger(flatData);
+            double[] out = nn.trigger(flatData).getOutput();
             error += NeuralMath.getError(out, NeuralMath.getOutputForLabel(label, nn.getOutputLayer().getNeurons().length));
             accuracy += (NeuralMath.getPredictedLabel(out) == label) ? 1.0 : 0.0;
             //System.out.println("Predicted: " + NeuralMath.getPredictedLabel(out) + " Actual: " + label);
         }
         error /= (double) numImg;
+        System.out.println(accuracy);
         accuracy /= (double) numImg;
         return new TestResult(error, accuracy);
     }

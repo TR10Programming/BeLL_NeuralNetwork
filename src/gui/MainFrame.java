@@ -11,8 +11,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -32,8 +30,8 @@ public class MainFrame extends javax.swing.JFrame {
      * Creates new form MainFrame
      */
     public MainFrame() {
-        //nn = new NeuralNetwork(1, 300, 28*28, 10);
-        nn = new NeuralNetwork(28 * 28, 10, new int[]{300, 100});
+        nn = new NeuralNetwork(1, 300, 28*28, 10);
+        //nn = new NeuralNetwork(28 * 28, 10, new int[]{300, 100});
         initComponents();
     }
 
@@ -47,6 +45,10 @@ public class MainFrame extends javax.swing.JFrame {
     private void initComponents() {
 
         fileChooser = new javax.swing.JFileChooser();
+        panelTraining = new javax.swing.JPanel();
+        slThreadCount = new javax.swing.JSlider();
+        lblThreadCount = new javax.swing.JLabel();
+        panelActions = new javax.swing.JPanel();
         btnTrain = new javax.swing.JButton();
         btnStopTraining = new javax.swing.JButton();
         menuBar = new javax.swing.JMenuBar();
@@ -64,6 +66,44 @@ public class MainFrame extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Neuronales Netz zur Handschrifterkennung");
 
+        panelTraining.setBorder(javax.swing.BorderFactory.createTitledBorder("Training"));
+
+        slThreadCount.setMajorTickSpacing(1);
+        slThreadCount.setMaximum(Runtime.getRuntime().availableProcessors() * 2);
+        slThreadCount.setMinimum(1);
+        slThreadCount.setMinorTickSpacing(1);
+        slThreadCount.setPaintLabels(true);
+        slThreadCount.setPaintTicks(true);
+        slThreadCount.setSnapToTicks(true);
+        slThreadCount.setValue(Runtime.getRuntime().availableProcessors());
+
+        lblThreadCount.setText("Threads");
+
+        javax.swing.GroupLayout panelTrainingLayout = new javax.swing.GroupLayout(panelTraining);
+        panelTraining.setLayout(panelTrainingLayout);
+        panelTrainingLayout.setHorizontalGroup(
+            panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelTrainingLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelTrainingLayout.createSequentialGroup()
+                        .addComponent(lblThreadCount)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(slThreadCount, javax.swing.GroupLayout.DEFAULT_SIZE, 364, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        panelTrainingLayout.setVerticalGroup(
+            panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelTrainingLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lblThreadCount)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(slThreadCount, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(206, Short.MAX_VALUE))
+        );
+
+        panelActions.setBorder(javax.swing.BorderFactory.createTitledBorder("Aktionen"));
+
         btnTrain.setText("Training beginnen");
         btnTrain.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -77,6 +117,27 @@ public class MainFrame extends javax.swing.JFrame {
                 btnStopTrainingActionPerformed(evt);
             }
         });
+
+        javax.swing.GroupLayout panelActionsLayout = new javax.swing.GroupLayout(panelActions);
+        panelActions.setLayout(panelActionsLayout);
+        panelActionsLayout.setHorizontalGroup(
+            panelActionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelActionsLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelActionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(btnTrain)
+                    .addComponent(btnStopTraining, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelActionsLayout.setVerticalGroup(
+            panelActionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelActionsLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(btnTrain)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnStopTraining)
+                .addContainerGap(12, Short.MAX_VALUE))
+        );
 
         mbNetwork.setText("Netz");
 
@@ -143,19 +204,19 @@ public class MainFrame extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(btnStopTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(btnTrain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(527, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(panelTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panelActions, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(btnTrain)
+                .addComponent(panelActions, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnStopTraining)
-                .addContainerGap(327, Short.MAX_VALUE))
+                .addComponent(panelTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(19, 19, 19))
         );
 
         pack();
@@ -169,7 +230,9 @@ public class MainFrame extends javax.swing.JFrame {
     private void btnTrainActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTrainActionPerformed
         LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer.getImages(), 28, 28, 10);
         
-        bp = new Backpropagator(nn, 0.005, 0);
+        int threadCount = slThreadCount.getValue();
+        
+        bp = new Backpropagator(nn, 0.00005, 0, 0);
         FileOutputStream fos = null;
         try {
             //Logging
@@ -177,7 +240,8 @@ public class MainFrame extends javax.swing.JFrame {
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
-        bp.train(trainingSupplier, 500, fos, 1);
+        //bp.train(trainingSupplier, 500, fos, 1);
+        bp.trainParallel(trainingSupplier, 500, fos, threadCount, trainingSupplier.getExampleCount() / threadCount, true);
     }//GEN-LAST:event_btnTrainActionPerformed
 
     private void btnStopTrainingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStopTrainingActionPerformed
@@ -251,6 +315,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnStopTraining;
     private javax.swing.JButton btnTrain;
     private javax.swing.JFileChooser fileChooser;
+    private javax.swing.JLabel lblThreadCount;
     private javax.swing.JMenu mbNetwork;
     private javax.swing.JMenu mbTest;
     private javax.swing.JMenuItem mbTestDraw;
@@ -260,5 +325,8 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JMenuItem miOpen;
     private javax.swing.JMenuItem miSave;
     private javax.swing.JMenuItem miTrainingExamples;
+    private javax.swing.JPanel panelActions;
+    private javax.swing.JPanel panelTraining;
+    private javax.swing.JSlider slThreadCount;
     // End of variables declaration//GEN-END:variables
 }

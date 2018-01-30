@@ -8,8 +8,6 @@ import de.fk.neuralnetwork.training.TrainingExample;
 import java.util.Random;
 import static java.lang.Math.log;
 import java.util.Arrays;
-import java.util.function.DoubleFunction;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 /**
@@ -18,7 +16,7 @@ import java.util.stream.IntStream;
  */
 public class NeuralMath {
     
-    private static Random rdm  = new Random(1081);
+    private static Random rdm  = new Random(System.currentTimeMillis());
 
     /**
      * Multipliziert den Eingabearray mit den übergebenen Gewichten.
@@ -33,7 +31,7 @@ public class NeuralMath {
      * @throws ArrayIndexOutOfBoundsException wenn der Eingabearray größer als der Gewichtearray ist
      */
     public static double applyWeights(double[] in, double[] weights) throws ArrayIndexOutOfBoundsException {
-        double result = 0f;
+        double result = 0.0;
         for(int i = 0; i < in.length; i++) result += in[i] * weights[i];
         for(int w = in.length; w < weights.length; w++) result += weights[w];
         return result;
@@ -58,9 +56,10 @@ public class NeuralMath {
      * @return Fehlerrate
      */
     public static double getError(double[] actual, double[] expected) {
+        //System.out.println("Actual: " + Arrays.toString(actual) + " Expected: " + Arrays.toString(expected));
         if(actual.length != expected.length)
             throw new IllegalArgumentException("Die Längen der Arrays sind unterschiedlich.");
-        double err = 0.0, sum = 0.0;
+        double err, sum = 0.0;
         for(int i = 0; i < actual.length; i++) {
             err = -log(expected[i] == 1 ? actual[i] : (1 - actual[i]));
             sum += Double.isFinite(err) ? err : 999999;

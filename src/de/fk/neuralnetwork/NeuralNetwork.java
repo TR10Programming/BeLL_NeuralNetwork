@@ -10,7 +10,7 @@ import java.io.Serializable;
  */
 public class NeuralNetwork implements Serializable {
     
-    private static final long serialVersionUID = /*-336732427642969125L*/655591235934461712L;
+    private static final long serialVersionUID = -336732427642969125L/*655591235934461712L*/;
     
     private NeuralLayer[] layers;
     private int inputNeurons, outputNeurons;
@@ -97,16 +97,18 @@ public class NeuralNetwork implements Serializable {
         return layers;
     }
     
-    public double[] trigger(double[] in) {
+    public NeuralNetworkState trigger(double[] in) {
         if(in.length != inputNeurons) throw new IllegalArgumentException("Es gibt " + inputNeurons + " Eingabeneuronen, es wurden aber " + in.length + " Werte eingegeben.");
         double[] vals = NeuralMath.addBias(in);
-        //System.out.println("Eingabe (Layer 1): " + Arrays.toString(vals));
-        for(int i = 0; i < layers.length; i++) {
-            vals = layers[i].trigger(vals);
-            //System.out.println("Layer " + (i + 2) + ": " + Arrays.toString(vals));
-        }
-        //System.out.println("Ausgabe: " + Arrays.toString(vals));
-        return vals;
+        NeuralNetworkState state = new NeuralNetworkState();
+        for(NeuralLayer layer : layers) state.addLayerActivations(vals = layer.trigger(vals));
+        return state;
+    }
+    
+    
+    
+    public void prepareParallelBackprop(int threads) {
+        for(NeuralLayer layer : layers) layer.prepareForParallelBackprop(threads);
     }
 
 }

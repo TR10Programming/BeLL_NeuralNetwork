@@ -26,7 +26,7 @@ public class ArrayTrainingSupplier extends TrainingSupplier {
 
     @Override
     protected TrainingExample supplyTrainingExample() {
-        if(iterator >= trainingExamples.size()) iterator = 0;
+        if(iterator >= trainingExamples.size()) iterator -= trainingExamples.size();
         return trainingExamples.get(iterator++);
     }
 
@@ -38,6 +38,14 @@ public class ArrayTrainingSupplier extends TrainingSupplier {
     @Override
     public int getExampleCount() {
         return trainingExamples.size();
+    }
+
+    @Override
+    protected TrainingExample[] supplyTrainingExamples(int count) {
+        if(iterator >= trainingExamples.size()) iterator -= trainingExamples.size();
+        TrainingExample[] examples = trainingExamples.subList(iterator, iterator + count).toArray(new TrainingExample[count]);
+        iterator += count;
+        return examples;
     }
 
 }

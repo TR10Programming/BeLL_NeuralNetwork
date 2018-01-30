@@ -167,7 +167,7 @@ public class DrawFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_slThicknessStateChanged
 
     public void updatePredictions(double[][] data) {
-        double[] out = nn.trigger(NeuralMath.flatten(data));
+        double[] out = nn.trigger(NeuralMath.flatten(data)).getOutput();
         int prediction = NeuralMath.getPredictedLabel(out);
         lblPredictedClass.setText(prediction + "");
         lblPredictedClassProb.setText(((int) (out[prediction] * 100)) + "%");

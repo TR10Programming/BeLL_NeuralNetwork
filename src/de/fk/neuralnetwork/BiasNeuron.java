@@ -18,33 +18,13 @@ public class BiasNeuron implements Neuron {
     }
 
     @Override
-    public double getActivation() {
-        return 1;
-    }
-
-    @Override
-    public void setError(double error) {
-        throw new UnsupportedOperationException("Ein Bias kann keinen Fehleranteil delta besitzen, da er keine ihm vorausgehenden Verbindungen hat.");
-    }
-
-    @Override
-    public double getError() {
-        throw new UnsupportedOperationException("Ein Bias kann keinen Fehleranteil delta besitzen, da er keine ihm vorausgehenden Verbindungen hat.");
-    }
-
-    @Override
-    public double getErrorDelta(ActivationFunction act) {
+    public double getErrorDelta(double error, ActivationFunction act, double[] activationsBefore) {
         throw new UnsupportedOperationException("Ein Bias kann keinen Delta-Wert besitzen, da er keine ihm vorausgehenden Verbindungen hat."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public double getWeightedInput() {
-        throw new UnsupportedOperationException("Ein Bias hat keine Eingabesignale.");
-    }
-
-    @Override
-    public void calcError(int neuronPos, NeuralLayer nextLayer) {
-        //Es ist unnötig, den Fehler eines Bias-Neurons zu berechnen, da es keine Eingabesignale besitzt.
+    public double getError(int neuronPos, NeuralLayer nextLayer, double[] errorDeltasNextLayer) {
+        throw new UnsupportedOperationException("Es ist unmöglich, den Fehler eines Bias-Neurons zu berechnen, da es keine Eingabesignale besitzt.");
     }
     
 }

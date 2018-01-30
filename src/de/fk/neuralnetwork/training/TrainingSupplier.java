@@ -1,7 +1,6 @@
 package de.fk.neuralnetwork.training;
 
 import de.fk.neuralnetwork.math.NeuralMath;
-import java.util.stream.Stream;
 
 /**
  *
@@ -47,12 +46,26 @@ public abstract class TrainingSupplier {
         return autoAddBias ? NeuralMath.addBias(te) : te;
     }
     
+    public TrainingExample[] nextTrainingExamples(int count) {
+        TrainingExample[] examples = supplyTrainingExamples(count);
+        if(autoAddBias) for(int i = 0; i < count; i++) NeuralMath.addBias(examples[i]);
+        return examples;
+    }
+    
     /**
      * Stellt das nächste Trainingsbeispiel bereit.
      *
      * @return TrainingExample
      */
     protected abstract TrainingExample supplyTrainingExample();
+    
+    /**
+     * Stellt die nächsten n Trainingsbeispiele bereit.
+     *
+     * @param count n
+     * @return n Trainingsbeispiele
+     */
+    protected abstract TrainingExample[] supplyTrainingExamples(int count);
     
     /**
      * Setzt den TrainingSupplier auf das erste Trainingsbeispiel zurück.

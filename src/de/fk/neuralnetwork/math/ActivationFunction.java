@@ -8,7 +8,7 @@ import java.io.Serializable;
  */
 public interface ActivationFunction extends Serializable {
     
-    public static ActivationFunction DEFAULT_ACTIVATION_FUNCTION = new LeakyReLU(0.05), DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION = new Sigmoid();
+    public static ActivationFunction DEFAULT_ACTIVATION_FUNCTION = new Sigmoid(), DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION = new Sigmoid();
     
     public double apply(double in);
     public double derivative(double in);

@@ -24,7 +24,7 @@ public class LabeledImageTrainingSupplier extends TrainingSupplier {
 
     @Override
     protected TrainingExample supplyTrainingExample() {
-        if(index >= images.size()) index = 0;
+        if(index >= images.size()) index -= images.size();
         LabeledImage li = images.get(index++);
         double[][] data = li.getData();
         return new TrainingExample(NeuralMath.flatten(data), NeuralMath.getOutputForLabel(li.getLabel(), classes));
@@ -38,6 +38,13 @@ public class LabeledImageTrainingSupplier extends TrainingSupplier {
     @Override
     public int getExampleCount() {
         return images.size();
+    }
+
+    @Override
+    protected TrainingExample[] supplyTrainingExamples(int count) {
+        TrainingExample[] examples = new TrainingExample[count];
+        for(int i = 0; i < count; i++) examples[i] = supplyTrainingExample();
+        return examples;
     }
 
 }

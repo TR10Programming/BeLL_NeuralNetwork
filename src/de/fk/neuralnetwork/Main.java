@@ -1,6 +1,7 @@
 package de.fk.neuralnetwork;
 
 import de.fk.neuralnetwork.data.ImageContainer;
+import de.fk.neuralnetwork.data.Tester;
 import de.fk.neuralnetwork.learning.Backpropagator;
 import de.fk.neuralnetwork.training.ArrayTrainingSupplier;
 import de.fk.neuralnetwork.training.LabeledImageTrainingSupplier;
@@ -23,8 +24,8 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        //mnistProblem();
         mnistProblem();
+        //xorProblem();
     }
     
     public static void mnistProblem() {
@@ -38,7 +39,7 @@ public class Main {
         
         LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer.getImages(), 28, 28, 10);
         
-        Backpropagator bp = new Backpropagator(nn, 0.03, 0);
+        Backpropagator bp = new Backpropagator(nn, 0.03, 0, 0);
         FileOutputStream fos = null;
         try {
             //Logging
@@ -46,7 +47,23 @@ public class Main {
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
-        bp.train(trainingSupplier, 500, fos, 1);
+        try {
+            Tester.testFromMnist("t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte", nn, 10000);
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        for(int i = 0; i < 5; i++) {
+            try {
+                bp.trainParallel(trainingSupplier, 100, fos, 1, 100, true).join();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            try {
+                Tester.testFromMnist("t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte", nn, 10000);
+            } catch (IOException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
     public static void xorProblem() {
@@ -61,10 +78,10 @@ public class Main {
         System.out.println("Zufälliges Netz generiert. Folgende Ausgaben macht das Netz für die Trainingsbeispiele:");
         
         trainingSupplier.getTrainingExamples().forEach((ex) -> {
-            System.out.println(Arrays.toString(ex.getIn()) + " -> " + Arrays.toString(nn.trigger(ex.getIn())));
+            System.out.println(Arrays.toString(ex.getIn()) + " -> " + Arrays.toString(nn.trigger(ex.getIn()).getOutput()));
         });
         
-        Backpropagator bp = new Backpropagator(nn, 3, 0);
+        Backpropagator bp = new Backpropagator(nn, 3, 0, 0);
         FileOutputStream fos = null;
         try {
             //Logging
@@ -73,8 +90,13 @@ public class Main {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        //Trainiere
-        bp.train(trainingSupplier, 100000, fos, 1000);
+        try {
+            //Trainiere
+            //bp.train(trainingSupplier, 100000, fos, 1000);
+            bp.trainParallel(trainingSupplier, 100000, fos, 1, 4, false).join();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         if(fos != null) try {
             fos.flush();
@@ -84,7 +106,7 @@ public class Main {
         
         System.out.println("Fertig trainiert. Folgende Ausgaben macht das Netz für die Trainingsbeispiele:");
         trainingSupplier.getTrainingExamples().forEach((ex) -> {
-            System.out.println(Arrays.toString(ex.getIn()) + " -> " + Arrays.toString(nn.trigger(ex.getIn())));
+            System.out.println(Arrays.toString(ex.getIn()) + " -> " + Arrays.toString(nn.trigger(ex.getIn()).getOutput()));
         });
         
         System.out.println("Folgende Gewichte wurden ermittelt:");

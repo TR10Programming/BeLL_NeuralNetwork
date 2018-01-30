@@ -8,3 +8,4 @@
 /train-labels.idx1-ubyte
 /300-100/
 /300-100_relu/
+/300-100_multithread/
