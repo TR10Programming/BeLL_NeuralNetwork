@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<Form version="1.3" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
+<Form version="1.5" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
   <NonVisualComponents>
     <Component class="javax.swing.JFileChooser" name="fileChooser">
       <Properties>
@@ -36,6 +36,17 @@
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="miSaveActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="miReset">
+              <Properties>
+                <Property name="accelerator" type="javax.swing.KeyStroke" editor="org.netbeans.modules.form.editors.KeyStrokeEditor">
+                  <KeyStroke key="Shift+Ctrl+X"/>
+                </Property>
+                <Property name="text" type="java.lang.String" value="Zur&#xfc;cksetzen"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="miResetActionPerformed"/>
               </Events>
             </MenuItem>
           </SubComponents>
@@ -149,14 +160,37 @@
       <Layout>
         <DimensionLayout dim="0">
           <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" alignment="0" attributes="0">
+              <Group type="102" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Group type="102" attributes="0">
-                          <Component id="lblThreadCount" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                      </Group>
                       <Component id="slThreadCount" pref="364" max="32767" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="lblThreadCount" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblThreadCount1" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Group type="102" alignment="0" attributes="0">
+                              <Group type="103" groupAlignment="1" max="-2" attributes="0">
+                                  <Component id="tfLearningRate" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="lblBatchSize" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="spBatchSize" alignment="0" pref="71" max="32767" attributes="0"/>
+                              </Group>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Group type="102" attributes="0">
+                                      <EmptySpace min="-2" pref="46" max="-2" attributes="0"/>
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Component id="spExamplesPerThread" min="-2" pref="71" max="-2" attributes="0"/>
+                                          <Component id="lblExamplesPerThread" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                                  </Group>
+                                  <Group type="102" alignment="0" attributes="0">
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="btnUpdateLearningRate" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="lblLearningRate" max="32767" attributes="0"/>
+                                  </Group>
+                              </Group>
+                          </Group>
+                      </Group>
                   </Group>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
@@ -169,7 +203,25 @@
                   <Component id="lblThreadCount" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="slThreadCount" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace pref="206" max="32767" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Component id="lblThreadCount1" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="tfLearningRate" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="btnUpdateLearningRate" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="lblLearningRate" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="lblBatchSize" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="lblExamplesPerThread" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="spBatchSize" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="spExamplesPerThread" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace pref="105" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -187,13 +239,68 @@
             <Property name="paintTicks" type="boolean" value="true"/>
             <Property name="snapToTicks" type="boolean" value="true"/>
             <Property name="value" type="int" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-              <Connection code="Runtime.getRuntime().availableProcessors()" type="code"/>
+              <Connection code="threadCount" type="code"/>
             </Property>
           </Properties>
+          <Events>
+            <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="slThreadCountStateChanged"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="lblThreadCount">
           <Properties>
             <Property name="text" type="java.lang.String" value="Threads"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="lblThreadCount1">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Lernrate"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="lblBatchSize">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Batch Size"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JSpinner" name="spBatchSize">
+          <Properties>
+            <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+              <SpinnerModel initial="0" maximum="0" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
+            </Property>
+            <Property name="enabled" type="boolean" value="false"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="lblExamplesPerThread">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Beispiele pro Thread"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JSpinner" name="spExamplesPerThread">
+          <Properties>
+            <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+              <SpinnerModel initial="1" minimum="1" numberType="java.lang.Integer" stepSize="1" type="number"/>
+            </Property>
+          </Properties>
+          <Events>
+            <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="spExamplesPerThreadStateChanged"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JTextField" name="tfLearningRate">
+          <Properties>
+            <Property name="horizontalAlignment" type="int" value="4"/>
+            <Property name="text" type="java.lang.String" value="0.01"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JButton" name="btnUpdateLearningRate">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Update"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnUpdateLearningRateActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JLabel" name="lblLearningRate">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="0.01"/>
           </Properties>
         </Component>
       </SubComponents>

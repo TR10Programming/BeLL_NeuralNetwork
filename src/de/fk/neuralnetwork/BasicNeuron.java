@@ -81,9 +81,10 @@ public class BasicNeuron implements Neuron {
     public double getError(int neuronPos, NeuralLayer nextLayer, double[] errorDeltasNextLayer) {
         double error = 0;
         Neuron[] neuronsNextLayer = nextLayer.getNeurons();
-        for(int i = 0; i < neuronsNextLayer.length; i++)
-            if(neuronsNextLayer[i] instanceof BasicNeuron)
-                error += errorDeltasNextLayer[i] * ((BasicNeuron) neuronsNextLayer[i]).getWeightAt(neuronPos);
+        for(int i = 0, j = 0; i < errorDeltasNextLayer.length && j < neuronsNextLayer.length; i++, j++) {
+            while(!(neuronsNextLayer[j] instanceof BasicNeuron)) j++;
+            error += errorDeltasNextLayer[i] * ((BasicNeuron) neuronsNextLayer[j]).getWeightAt(neuronPos);
+        }
         return error;
     }
     

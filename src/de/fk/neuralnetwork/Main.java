@@ -53,11 +53,8 @@ public class Main {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
         for(int i = 0; i < 5; i++) {
-            try {
-                bp.trainParallel(trainingSupplier, 100, fos, 1, 100, true).join();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            bp.trainParallel(trainingSupplier, 100, fos, 1, 100, true);
+            //TODO Warten
             try {
                 Tester.testFromMnist("t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte", nn, 10000);
             } catch (IOException ex) {
@@ -90,13 +87,8 @@ public class Main {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        try {
-            //Trainiere
-            //bp.train(trainingSupplier, 100000, fos, 1000);
-            bp.trainParallel(trainingSupplier, 100000, fos, 1, 4, false).join();
-        } catch (InterruptedException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        bp.trainParallel(trainingSupplier, 100000, fos, 1, 4, false);
+        //TODO Warten
         
         if(fos != null) try {
             fos.flush();

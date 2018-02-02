@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,11 +25,14 @@ import java.util.logging.Logger;
 public class Backpropagator {
     
     public static final int SAVE_EVERY_X_ITERATIONS = 10;
+    public static final double ADAPTIVE_LEARNING_RATE_DOWN = 0.7, ADAPTIVE_LEARNING_RATE_UP = 1.025;
 
     private NeuralNetwork net;
     private double learningRate, regularizationRate, momentum;
+    @Deprecated
     private Thread trainThread;
-    private boolean trainThreadStopped;
+    private boolean stopped, training;
+    private Runnable learningRateUpdated = null;
     
     public Backpropagator(NeuralNetwork net, double learningRate, double regularizationRate, double momentum) {
         this.net = net;
@@ -34,7 +40,24 @@ public class Backpropagator {
         this.regularizationRate = regularizationRate;
         this.momentum = momentum;
         this.trainThread = null;
-        this.trainThreadStopped = false;
+        this.stopped = false;
+        this.training = false;
+    }
+
+    public void setLearningRate(double learningRate) {
+        this.learningRate = learningRate;
+    }
+
+    public double getLearningRate() {
+        return learningRate;
+    }
+
+    public void setNet(NeuralNetwork net) {
+        this.net = net;
+    }
+
+    public void setLearningRateUpdated(Runnable learningRateUpdated) {
+        this.learningRateUpdated = learningRateUpdated;
     }
     
     /**
@@ -50,8 +73,8 @@ public class Backpropagator {
      * @deprecated Ersetzt durch trainParallel
      */
     public Thread train(TrainingSupplier trainingSupplier, int iterations, OutputStream errorLoggerStream, int logEveryXIterations) throws IllegalStateException {
-        if(trainThread != null) throw new IllegalStateException("Es wird bereits trainiert.");
-        trainThreadStopped = false;
+        if(trainThread != null || training) throw new IllegalStateException("Es wird bereits trainiert.");
+        stopped = false;
         (trainThread = new Thread(() -> {
         
             long startTime = System.currentTimeMillis();
@@ -59,7 +82,7 @@ public class Backpropagator {
             double error = 0.0;
             System.out.println("Training with " + exampleCount + " examples per iteration.");
             for(int iteration = 0; iteration < iterations; iteration++, logIt++) {
-                if(trainThreadStopped) break;
+                if(stopped) break;
                 error = 0.0;
                 for(int example = 0; example < exampleCount; example++) {
                     error += backpropStep(trainingSupplier.nextTrainingExample(), 1);
@@ -83,7 +106,40 @@ public class Backpropagator {
         return trainThread;
     }
     
-    private double error = 0.0;
+    private double error = 0.0, lastError = -1.0;
+    private int iteration = 0;
+    private TrainingExample[][] examples;
+    private CyclicBarrier trainingBarrier;
+    
+    protected class TrainingRunnable implements Runnable {
+        
+        private CyclicBarrier trainingBarrier;
+        private int threadId;
+
+        public TrainingRunnable(CyclicBarrier trainingBarrier, int threadId) {
+            this.trainingBarrier = trainingBarrier;
+            this.threadId = threadId;
+        }
+
+        @Override
+        public void run() {
+            while(training) {
+                double threadError = 0.0;
+                for(TrainingExample threadExample : examples[threadId]) {
+                    threadError += backpropStep(threadExample, threadId);
+                }
+                error += threadError;
+                try {
+                    trainingBarrier.await();
+                } catch (InterruptedException | BrokenBarrierException ex) {
+                    Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
+                    break;
+                }
+            }
+            System.out.println("Trainingsthread #" + threadId + " angehalten!");
+        }
+        
+    }
     
     /**
      * Startet den Trainingsvorgang (Multi-Threading-fähig).
@@ -94,54 +150,35 @@ public class Backpropagator {
      * @param threadCount Anzahl der zu verwendenden Backpropagation-Threads
      * @param examplesPerThread Trainingsbeispiele, die jeder Thread für die Backpropagation verwenden soll (empfohlen: examplesCount / threadCount; sollte nicht größer sein, da sonst Beispiele von mehreren Threads gleichzeitig trainiert werden)
      * @param staticExamples true, wenn für jeden Thread dauerhaft dieselben Trainingsbeispiele verwendet werden sollen (nur bei einer konstanten, endlichen Anzahl an Trainingsbeispielen sinnvoll)
-     * @return Haupttrainingsthread
-     * @throws IllegalStateException Wenn bereits ein Trainingsthread läuft
+     * @throws IllegalStateException Wenn bereits trainiert wird
      * @see Backpropagator#stopTraining() 
      */
-    public Thread trainParallel(TrainingSupplier trainingSupplier, int iterations, OutputStream errorLoggerStream, int threadCount, int examplesPerThread, boolean staticExamples) throws IllegalStateException {
-        if(trainThread != null) throw new IllegalStateException("Es wird bereits trainiert.");
-        trainThreadStopped = false;
-        (trainThread = new Thread(() -> {
-        
-            long startTime = System.currentTimeMillis();
-            int exampleCount = trainingSupplier.getExampleCount();
-            net.prepareParallelBackprop(threadCount);
-            
-            System.out.println("Training with " + threadCount + " threads with " + examplesPerThread + " training examples each.");
-            TrainingExample[][] examples = new TrainingExample[threadCount][examplesPerThread];
-            for(int iteration = 0; iteration < iterations; iteration++) {
-                if(trainThreadStopped) break;
-                //Trainingsbeispiele anfordern
-                if(!(staticExamples && iteration > 0)) {
-                    for(int t = 0; t < threadCount; t++) {
-                        examples[t] = trainingSupplier.nextTrainingExamples(examplesPerThread);
-                        //System.out.println("Example 1 for thread #" + t + " out: " + Arrays.toString(examples[t][0].getOut()) + " In: " + Arrays.toString(examples[t][0].getIn()));
-                    }
-                }
-                //Trainingsthreads starten
-                Thread[] trainingThreads = new Thread[threadCount];
-                error = 0.0;
-                for(int t = 0; t < threadCount; t++) {
-                    final TrainingExample[] threadExamples = examples[t];
-                    final int threadId = t;
-                    (trainingThreads[t] = new Thread(() -> {
-                        double threadError = 0.0;
-                        for(TrainingExample threadExample : threadExamples) {
-                            threadError += backpropStep(threadExample, threadId);
-                        }
-                        error += threadError;
-                    }, "TrainingThread#" + t)).start();
-                }
-                //Auf Threads warten
-                for(int t = 0; t < threadCount; t++) try {
-                    trainingThreads[t].join();
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                //Learn/Apply accumulators
-                Arrays.stream(net.getLayers()).parallel().forEach(l -> l.accumulate(learningRate, regularizationRate, momentum));
+    public void trainParallel(TrainingSupplier trainingSupplier, int iterations, OutputStream errorLoggerStream, int threadCount, int examplesPerThread, boolean staticExamples) throws IllegalStateException {
+        if(training || trainThread != null) throw new IllegalStateException("Es wird bereits trainiert.");
+        training = true;
+        stopped = false;
+        //Initialisieren
+        final long startTime = System.currentTimeMillis();
+        int exampleCount = trainingSupplier.getExampleCount(), fullTrainingCycle = exampleCount / (examplesPerThread * threadCount);
+        net.prepareParallelBackprop(threadCount);
+        examples = new TrainingExample[threadCount][examplesPerThread];
+        error = 0.0;
+        lastError = -1.0;
+        iteration = 0;
+        //Trainingsbeispiele laden
+        for(int t = 0; t < threadCount; t++) {
+            examples[t] = trainingSupplier.nextTrainingExamples(examplesPerThread);
+            //System.out.println("Example 1 for thread #" + t + " out: " + Arrays.toString(examples[t][0].getOut()) + " In: " + Arrays.toString(examples[t][0].getIn()));
+        }
+        //CyclicBarrier erstellen
+        trainingBarrier = new CyclicBarrier(threadCount, () -> {
+            iteration++;
+            //Learn/Apply accumulators
+            Arrays.stream(net.getLayers()).parallel().forEach(l -> l.accumulate(learningRate, regularizationRate, momentum));
+            //Alle Beispiele angesehen
+            if(iteration % fullTrainingCycle == 0) {
                 //Fehler berechnen
-                error /= threadCount * examplesPerThread;
+                error /= fullTrainingCycle * threadCount * examplesPerThread;
                 //Logging
                 try {
                     double time = (System.currentTimeMillis() - startTime) / 1000.0;
@@ -155,11 +192,33 @@ public class Backpropagator {
                         oos.close();
                     }*/
                 } catch (IOException ex) {}
+                //Adaptive Lernrate
+                if(lastError > 0.0) {
+                    if(error < lastError) learningRate *= ADAPTIVE_LEARNING_RATE_UP;
+                    else learningRate *= ADAPTIVE_LEARNING_RATE_DOWN;
+                    if(learningRateUpdated != null) learningRateUpdated.run();
+                    System.out.println("Lernrate angepasst: " + learningRate);
+                }
+                //Fehler zurücksetzen
+                lastError = error;
+                error = 0;
             }
-            System.out.println("Trained for " + iterations + " iterations. Error: " + error);
-            this.trainThread = null;
-        })).start();
-        return trainThread;
+            //Überprüfen ob Training gestoppt
+            if(stopped || iteration >= iterations) {
+                System.out.println("Trainiert für " + iterations + " Iterationen.");
+                training = false;
+            }
+            //Neue Trainingsbeispiele laden
+            if(!staticExamples) {
+                for(int t = 0; t < threadCount; t++) {
+                    examples[t] = trainingSupplier.nextTrainingExamples(examplesPerThread);
+                    //System.out.println("Example 1 for thread #" + t + " out: " + Arrays.toString(examples[t][0].getOut()) + " In: " + Arrays.toString(examples[t][0].getIn()));
+                }
+            }
+        });
+        
+        //Threads erstellen
+        for(int t = 0; t < threadCount; t++) new Thread(new TrainingRunnable(trainingBarrier, t), "TrainingThread#" + t).start();
     }
     
     /**
@@ -171,7 +230,7 @@ public class Backpropagator {
      * @return Erfolg
      */
     public boolean stopTraining() {
-        return trainThread != null && (trainThreadStopped = true);
+        return (trainThread != null || training) && (stopped = true);
     }
     
     /**
