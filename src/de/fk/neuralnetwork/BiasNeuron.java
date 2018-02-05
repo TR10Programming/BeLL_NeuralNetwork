@@ -3,6 +3,8 @@ package de.fk.neuralnetwork;
 import de.fk.neuralnetwork.math.ActivationFunction;
 
 /**
+ * Ein Neuron ohne Gewichte mit der Aktivierung 1. Für die Backpropagation
+ * irrelevant.
  *
  * @author Felix
  */

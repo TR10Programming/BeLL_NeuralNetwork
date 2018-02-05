@@ -1,6 +1,10 @@
 package gui;
 
 import de.fk.neuralnetwork.data.ImageContainer;
+import de.fk.neuralnetwork.data.LabeledImage;
+import de.fk.neuralnetwork.data.Tester;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  *
@@ -8,11 +12,19 @@ import de.fk.neuralnetwork.data.ImageContainer;
  */
 public class TrainingExamplesFrame extends javax.swing.JFrame {
 
+    private MainFrame mfr;
+    
     /**
      * Creates new form TrainingExamplesFrame
+     * @param mfr
      */
-    public TrainingExamplesFrame() {
+    public TrainingExamplesFrame(MainFrame mfr) {
+        this.mfr = mfr;
         initComponents();
+    }
+    
+    public TrainingExampleDisplayPanel getDisplayPanel() {
+        return (TrainingExampleDisplayPanel) displayPanel;
     }
 
     /**
@@ -29,12 +41,15 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
         btnBack = new javax.swing.JButton();
         tfPosition = new javax.swing.JTextField();
         btnForward = new javax.swing.JButton();
-        displayPanel = new TrainingExampleDisplayPanel();
+        displayPanel = new TrainingExampleDisplayPanel(ImageContainer.getImages());
         menuBar = new javax.swing.JMenuBar();
         mnFile = new javax.swing.JMenu();
         miImportMnist = new javax.swing.JMenuItem();
         miReset = new javax.swing.JMenuItem();
         miClose = new javax.swing.JMenuItem();
+        mnView = new javax.swing.JMenu();
+        miShowAll = new javax.swing.JMenuItem();
+        miShowIncorrect = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Trainingsbeispiele");
@@ -103,6 +118,28 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
 
         menuBar.add(mnFile);
 
+        mnView.setText("Ansicht");
+
+        miShowAll.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_1, java.awt.event.InputEvent.CTRL_MASK));
+        miShowAll.setText("Alle anzeigen");
+        miShowAll.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miShowAllActionPerformed(evt);
+            }
+        });
+        mnView.add(miShowAll);
+
+        miShowIncorrect.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_2, java.awt.event.InputEvent.CTRL_MASK));
+        miShowIncorrect.setText("Falsch Klassifizierte anzeigen");
+        miShowIncorrect.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miShowIncorrectActionPerformed(evt);
+            }
+        });
+        mnView.add(miShowIncorrect);
+
+        menuBar.add(mnView);
+
         setJMenuBar(menuBar);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -124,7 +161,7 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void updateImages() {
-        lblState.setText("    " + ImageContainer.getImages().size() + " Trainingsbeispiele geladen.    ");
+        lblState.setText("    " + getDisplayPanel().getImageList().size() + " Trainingsbeispiele geladen.    ");
         displayPanel.repaint();
     }
     
@@ -142,34 +179,16 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
         dispose();
     }//GEN-LAST:event_miCloseActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Windows".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(TrainingExamplesFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        
-        //</editor-fold>
+    private void miShowIncorrectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miShowIncorrectActionPerformed
+        HashMap<LabeledImage, Double> imgs = Tester.findIncorrectlyClassified(mfr.getNet(), ImageContainer.getImages());
+        getDisplayPanel().setImageList(new ArrayList<>(imgs.keySet()));
+        updateImages();
+    }//GEN-LAST:event_miShowIncorrectActionPerformed
 
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> {
-            new TrainingExamplesFrame().setVisible(true);
-        });
-    }
+    private void miShowAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miShowAllActionPerformed
+        getDisplayPanel().setImageList(ImageContainer.getImages());
+        updateImages();
+    }//GEN-LAST:event_miShowAllActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBack;
@@ -180,7 +199,10 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
     private javax.swing.JMenuItem miClose;
     private javax.swing.JMenuItem miImportMnist;
     private javax.swing.JMenuItem miReset;
+    private javax.swing.JMenuItem miShowAll;
+    private javax.swing.JMenuItem miShowIncorrect;
     private javax.swing.JMenu mnFile;
+    private javax.swing.JMenu mnView;
     private javax.swing.JTextField tfPosition;
     private javax.swing.JToolBar toolBar;
     // End of variables declaration//GEN-END:variables

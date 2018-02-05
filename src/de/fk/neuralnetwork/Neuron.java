@@ -5,6 +5,7 @@ import de.fk.neuralnetwork.math.NeuralMath;
 import java.io.Serializable;
 
 /**
+ * Repräsentiert ein Neuron in einem neuronalen Netz.
  *
  * @author Felix
  */

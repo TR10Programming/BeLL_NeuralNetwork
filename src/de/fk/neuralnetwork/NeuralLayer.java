@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
+ * Eine Schicht mit einer beliebigen Anzahl Neuronen.
  *
  * @author Felix
  */
@@ -23,6 +24,11 @@ public class NeuralLayer implements Serializable {
         if(bias) neurons[0] = new BiasNeuron();
         for(int i = (bias ? 1 : 0); i < neurons.length; i++) neurons[i] = new BasicNeuron(connectedNeurons);
         act = ActivationFunction.DEFAULT_ACTIVATION_FUNCTION;
+    }
+    
+    public NeuralLayer(ActivationFunction act, Neuron... neurons) {
+        this.act = act;
+        this.neurons = neurons;
     }
 
     public Neuron[] getNeurons() {

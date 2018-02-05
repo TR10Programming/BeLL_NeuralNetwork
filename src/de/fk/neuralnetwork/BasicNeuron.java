@@ -4,6 +4,7 @@ import de.fk.neuralnetwork.math.ActivationFunction;
 import de.fk.neuralnetwork.math.NeuralMath;
 
 /**
+ * Ein Neuron mit Gewichten zu seinem Vorgänger.
  *
  * @author Felix
  */
@@ -14,6 +15,12 @@ public class BasicNeuron implements Neuron {
     private double[] weights, weightsChange;
     private double[][] accum;
     
+    /**
+     * Generiert ein Neuron mit der übergebenen Anzahl an verbundenen Neuronen
+     * im vorhergehenden Layer.
+     *
+     * @param connectedNeurons
+     */
     public BasicNeuron(int connectedNeurons) {
         weights = NeuralMath.generateRandomWeights(connectedNeurons);
         this.accum = new double[1][weights.length];
@@ -21,6 +28,11 @@ public class BasicNeuron implements Neuron {
         //System.out.println("Neues Neuron mit " + connectedNeurons + " Vorgängern generiert.");
     }
     
+    /**
+     * Generiert ein Neuron mit den übergebenen Gewichten.
+     *
+     * @param weights Gewichte
+     */
     public BasicNeuron(double[] weights) {
         this.weights = weights;
         this.accum = new double[1][weights.length];
@@ -54,14 +66,40 @@ public class BasicNeuron implements Neuron {
         return error * act.derivative(NeuralMath.applyWeights(activationsBefore, weights));
     }
     
+    /**
+     * Setzt die gespeicherten Gewichtsänderungen zurück. Sollte normalerweise
+     * nicht manuell aufgerufen werden.
+     *
+     * @param threadId ID des aktiven Threads
+     */
     public void resetAccumulatorMatrix(int threadId) {
         this.accum[threadId] = new double[weights.length];
     }
     
+    /**
+     * Berechnet die Gewichtsänderungen für die übergebenen Aktivierungen und
+     * Delta-Fehler und speichert diese.
+     *
+     * @param errorDelta Delta-Fehler
+     * @param activationsBefore Aktivierungen im vorhergehenden Layer
+     * @param act Aktivierungsfunktion
+     * @param threadId Thread-ID
+     * @see BasicNeuron#accumulate(double, double, double) 
+     */
     public void calcAccumulatorMatrix(double errorDelta, double[] activationsBefore, ActivationFunction act, int threadId) {
         for(int i = 0; i < accum[threadId].length; i++) accum[threadId][i] += errorDelta * activationsBefore[i];
     }
     
+    /**
+     * Updatet die Gewichte, nachdem <code>calcAccumulatorMatrix</code>
+     * mindestens einmal aufgerufen wurde. Anschließend werden die gespeicherten
+     * Gewichtsänderungen zurückgesetzt.
+     *
+     * @param learningRate Lernrate Alpha
+     * @param regularizationRate Regularisierungsrate Lambda
+     * @param momentum Trägheit My
+     * @see BasicNeuron#calcAccumulatorMatrix(double, double[], de.fk.neuralnetwork.math.ActivationFunction, int) 
+     */
     public void accumulate(double learningRate, double regularizationRate, double momentum) {//TODO Regularization
         for(int i = 0; i < weights.length; i++) {
             double weightsChangeBefore = weightsChange[i];
@@ -88,6 +126,11 @@ public class BasicNeuron implements Neuron {
         return error;
     }
     
+    /**
+     * Muss bei jedem Start des Backpropagation-Algorithmus aufgerufen werden.
+     *
+     * @param threads Anzahl der Threads
+     */
     public void prepareForParallelBackprop(int threads) {
         this.accum = new double[threads][weights.length];
     }

@@ -2,36 +2,59 @@ package de.fk.neuralnetwork.data;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Zum Lernen anhand von Bilddaten. Speichert alle Bilder vom Typ LabeledImage.
  *
  * @author Felix
+ * @see LabeledImage
  */
 public class ImageContainer {
     
-    public static final int MNIST_IMAGE_FILE_MAGIC_NUMBER = 2051,
-            MNIST_LABEL_FILE_MAGIC_NUMBER = 2049;
+    /**
+     * Die Magic Number eines MNIST Image Files.
+     */
+    public static final int MNIST_IMAGE_FILE_MAGIC_NUMBER = 2051;
+
+    /**
+     * Die Magic Number eines MNIST Label Files.
+     */
+    public static final int MNIST_LABEL_FILE_MAGIC_NUMBER = 2049;
 
     private static ArrayList<LabeledImage> images = new ArrayList<>();
     
+    /**
+     * Entfernt alle geladenen Bilder aus dem Speicher.
+     */
     public static void clear() {
         images.clear();
+        System.gc();
     }
     
+    /**
+     * Gibt alle Bilder im Speicher als Liste zurück.
+     *
+     * @return
+     */
     public static List<LabeledImage> getImages() {
         return images;
     }
     
+    /**
+     * Liest Bild- und Labeldaten aus MNIST-Dateien ein. Diese dürfen nicht
+     * GZIP-komprimiert sein.
+     *
+     * @param imageFile Datei mit den Bilddaten (Anzahl x Höhe x Breite)
+     * @param labelFile Datei mit den Labeldaten (Anzahl)
+     * @param maxImages Anzahl an maximal einzulesenden Bildern
+     * @throws IOException Lesefehler
+     */
     public static void readFromMnist(String imageFile, String labelFile, int maxImages) throws IOException {
         //ImageFile einlesen und überprüfen
         ByteBuffer imageBytes = ByteBuffer.wrap(Files.readAllBytes(Paths.get(imageFile)));
@@ -60,6 +83,15 @@ public class ImageContainer {
         }
     }
     
+    /**
+     * Überprüft, ob es sich bei der übergebenen Datei um ein MNIST Image File
+     * handelt und gibt ggf die Anzahl der enthaltenen Bilder zurück.
+     *
+     * @param imageFile Zu überprüfende Datei
+     * @return Anzahl der enthaltenen Bilder oder -1, wenn es sich nicht um ein
+     * MNIST Image File handelt.
+     * @throws IOException Lesefehler
+     */
     public static int validateMnistImageFile(String imageFile) throws IOException {
         DataInputStream dis = new DataInputStream(new FileInputStream(imageFile));
         int mn = dis.readInt();
@@ -72,6 +104,15 @@ public class ImageContainer {
         return numImg;
     }
     
+    /**
+     * Überprüft, ob es sich bei der übergebenen Datei um ein MNIST Label File
+     * handelt und gibt ggf die Anzahl der enthaltenen Labels zurück.
+     *
+     * @param labelFile Zu überprüfende Datei
+     * @return Anzahl der enthaltenen Labels oder -1, wenn es sich nicht um ein
+     * MNIST Label File handelt.
+     * @throws IOException Lesefehler
+     */
     public static int validateMnistLabelFile(String labelFile) throws IOException {
         DataInputStream dis = new DataInputStream(new FileInputStream(labelFile));
         if(dis.readInt() != MNIST_LABEL_FILE_MAGIC_NUMBER) {

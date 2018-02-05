@@ -17,9 +17,21 @@ public class TrainingExampleDisplayPanel extends JPanel {
     
     public static final Font FONT = new Font("Arial", Font.PLAIN, 12);
     public static final int IMAGE_SCALE = 2, PADDING = 20, SPACING = 10, SPACING_BOTTOM = 30;
+    
+    private List<LabeledImage> imageList;
 
-    public TrainingExampleDisplayPanel() {
+    public TrainingExampleDisplayPanel(List<LabeledImage> imageList) {
         super(true);
+        this.imageList = imageList;
+    }
+    
+    public void setImageList(List<LabeledImage> imageList) {
+        this.imageList = imageList;
+        repaint();
+    }
+
+    public List<LabeledImage> getImageList() {
+        return imageList;
     }
 
     @Override
@@ -29,10 +41,9 @@ public class TrainingExampleDisplayPanel extends JPanel {
         g.setFont(FONT);
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, pw, ph);
-        List<LabeledImage> imgs = ImageContainer.getImages();
         int x = PADDING, y = PADDING, maxHeight = 0;
-        for(int i = 0; i < imgs.size(); i++) {
-            LabeledImage cimg = imgs.get(i);
+        for(int i = 0; i < imageList.size(); i++) {
+            LabeledImage cimg = imageList.get(i);
             double[][] cdata = cimg.getData();
             //Überprüfe ob Zeilenumbruch notwendig
             int cy = IMAGE_SCALE * cdata.length + SPACING_BOTTOM, cx = IMAGE_SCALE * cdata[0].length + SPACING;

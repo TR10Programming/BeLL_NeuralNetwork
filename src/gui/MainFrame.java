@@ -3,8 +3,10 @@ package gui;
 import de.fk.neuralnetwork.Main;
 import de.fk.neuralnetwork.NeuralNetwork;
 import de.fk.neuralnetwork.data.ImageContainer;
+import de.fk.neuralnetwork.io.FileIO;
 import de.fk.neuralnetwork.learning.Backpropagator;
 import de.fk.neuralnetwork.training.LabeledImageTrainingSupplier;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -15,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  *
@@ -53,6 +56,10 @@ public class MainFrame extends javax.swing.JFrame {
     public final void updateLearningRate() {
         lblLearningRate.setText(bp.getLearningRate() + "");
     }
+    
+    public NeuralNetwork getNet() {
+        return nn;
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -63,7 +70,8 @@ public class MainFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        fileChooser = new javax.swing.JFileChooser();
+        saveFileChooser = new javax.swing.JFileChooser();
+        openFileChooser = new javax.swing.JFileChooser();
         panelTraining = new javax.swing.JPanel();
         slThreadCount = new javax.swing.JSlider();
         lblThreadCount = new javax.swing.JLabel();
@@ -89,7 +97,17 @@ public class MainFrame extends javax.swing.JFrame {
         mbTestMNIST = new javax.swing.JMenuItem();
         mbTestDraw = new javax.swing.JMenuItem();
 
-        fileChooser.setCurrentDirectory(new java.io.File("D:\\Dokumente\\NetBeansProjects\\BeLL_NeuralNetwork"));
+        saveFileChooser.setCurrentDirectory(new java.io.File("D:\\Dokumente\\NetBeansProjects\\BeLL_NeuralNetwork"));
+        FileNameExtensionFilter saveDefaultFilter = new FileNameExtensionFilter("Neuronales Netz (JSON)", "jnet");
+        saveFileChooser.addChoosableFileFilter(saveDefaultFilter);
+        saveFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Neuronales Netz (Formatiertes JSON)", "jfnet"));
+        saveFileChooser.setFileFilter(saveDefaultFilter);
+
+        FileNameExtensionFilter openDefaultFilter = new FileNameExtensionFilter("Neuronales Netz (JSON)", "jnet", "jfnet");
+        openFileChooser.addChoosableFileFilter(openDefaultFilter);
+        openFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Neuronales Netz (OOS)", "net"));
+        openFileChooser.setFileFilter(openDefaultFilter);
+        openFileChooser.setCurrentDirectory(new java.io.File("D:\\Dokumente\\NetBeansProjects\\BeLL_NeuralNetwork"));
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Neuronales Netz zur Handschrifterkennung");
@@ -148,26 +166,25 @@ public class MainFrame extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(slThreadCount, javax.swing.GroupLayout.DEFAULT_SIZE, 364, Short.MAX_VALUE)
-                    .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(lblThreadCount)
-                        .addComponent(lblThreadCount1)
-                        .addGroup(panelTrainingLayout.createSequentialGroup()
-                            .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                .addComponent(tfLearningRate, javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(lblBatchSize, javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(spBatchSize, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE))
-                            .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(panelTrainingLayout.createSequentialGroup()
-                                    .addGap(46, 46, 46)
-                                    .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(spExamplesPerThread, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(lblExamplesPerThread))
-                                    .addGap(0, 0, Short.MAX_VALUE))
-                                .addGroup(panelTrainingLayout.createSequentialGroup()
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(btnUpdateLearningRate)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(lblLearningRate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))))
+                    .addComponent(lblThreadCount)
+                    .addComponent(lblThreadCount1)
+                    .addGroup(panelTrainingLayout.createSequentialGroup()
+                        .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(tfLearningRate, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lblBatchSize, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spBatchSize, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE))
+                        .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(panelTrainingLayout.createSequentialGroup()
+                                .addGap(46, 46, 46)
+                                .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(spExamplesPerThread, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lblExamplesPerThread))
+                                .addGap(0, 0, Short.MAX_VALUE))
+                            .addGroup(panelTrainingLayout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btnUpdateLearningRate)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(lblLearningRate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
                 .addContainerGap())
         );
         panelTrainingLayout.setVerticalGroup(
@@ -325,7 +342,7 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void miTrainingExamplesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miTrainingExamplesActionPerformed
-        if(teframe == null || !teframe.isDisplayable()) teframe = new TrainingExamplesFrame();
+        if(teframe == null || !teframe.isDisplayable()) teframe = new TrainingExamplesFrame(this);
         teframe.setVisible(true);
     }//GEN-LAST:event_miTrainingExamplesActionPerformed
 
@@ -340,7 +357,7 @@ public class MainFrame extends javax.swing.JFrame {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
         //bp.train(trainingSupplier, 500, fos, 1);
-        bp.trainParallel(trainingSupplier, 5000, fos, threadCount, batchSize / threadCount, false);
+        bp.trainParallel(trainingSupplier, Integer.MAX_VALUE, fos, threadCount, batchSize / threadCount, false);
     }//GEN-LAST:event_btnTrainActionPerformed
 
     private void btnStopTrainingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStopTrainingActionPerformed
@@ -348,12 +365,23 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnStopTrainingActionPerformed
 
     private void miSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miSaveActionPerformed
-        if(fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+        if(saveFileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-                nn.sout();
+                /*nn.sout();
                 ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileChooser.getSelectedFile()));
                 oos.writeObject(nn);
-                oos.close();
+                oos.close();*/
+                File f = saveFileChooser.getSelectedFile();
+                FileNameExtensionFilter ff = (FileNameExtensionFilter) saveFileChooser.getFileFilter();
+                String[] exts = f.getName().split("\\.");
+                String ext = exts[exts.length - 1];
+                boolean correctExt = false;
+                for(String ffext : ff.getExtensions()) if(ext.equalsIgnoreCase(ffext)) {
+                    correctExt = true;
+                    break;
+                }
+                if(!correctExt) f = new File(f.toString() + "." + ff.getExtensions()[0].toLowerCase());
+                FileIO.write(f, nn, "jfnet".equalsIgnoreCase(ext));
             } catch (IOException | NullPointerException ex) {
                 Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -362,12 +390,31 @@ public class MainFrame extends javax.swing.JFrame {
 
     private void miOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miOpenActionPerformed
         if(bp != null) bp.stopTraining();
-        if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+        if(openFileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileChooser.getSelectedFile()));
-                nn = (NeuralNetwork) ois.readObject();
-                ois.close();
-                if(bp != null) bp.setNet(nn);
+                /*nn.sout();
+                ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileChooser.getSelectedFile()));
+                oos.writeObject(nn);
+                oos.close();*/
+                File f = openFileChooser.getSelectedFile();
+                FileNameExtensionFilter ff = (FileNameExtensionFilter) openFileChooser.getFileFilter();
+                String[] exts = f.getName().split("\\.");
+                String ext = exts[exts.length - 1].toLowerCase();
+                switch (ext) {
+                    case "jnet":
+                    case "jfnet":
+                        nn = FileIO.read(f);
+                        break;
+                    case "net":
+                        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(openFileChooser.getSelectedFile()));
+                        nn = (NeuralNetwork) ois.readObject();
+                        ois.close();
+                        if(bp != null) bp.setNet(nn);
+                        break;
+                    default:
+                        JOptionPane.showMessageDialog(this, "Fehler: Unbekannter Dateityp", "Fehler", JOptionPane.ERROR_MESSAGE);
+                        break;
+                }
             } catch (IOException | NullPointerException | ClassNotFoundException ex) {
                 Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -441,7 +488,6 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnStopTraining;
     private javax.swing.JButton btnTrain;
     private javax.swing.JButton btnUpdateLearningRate;
-    private javax.swing.JFileChooser fileChooser;
     private javax.swing.JLabel lblBatchSize;
     private javax.swing.JLabel lblExamplesPerThread;
     private javax.swing.JLabel lblLearningRate;
@@ -457,8 +503,10 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JMenuItem miReset;
     private javax.swing.JMenuItem miSave;
     private javax.swing.JMenuItem miTrainingExamples;
+    private javax.swing.JFileChooser openFileChooser;
     private javax.swing.JPanel panelActions;
     private javax.swing.JPanel panelTraining;
+    private javax.swing.JFileChooser saveFileChooser;
     private javax.swing.JSlider slThreadCount;
     private javax.swing.JSpinner spBatchSize;
     private javax.swing.JSpinner spExamplesPerThread;

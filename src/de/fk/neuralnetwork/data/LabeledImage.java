@@ -1,6 +1,7 @@
 package de.fk.neuralnetwork.data;
 
 /**
+ * Repräsentiert ein Graustufenbild mit einem Label.
  *
  * @author Felix
  */
@@ -9,6 +10,12 @@ public class LabeledImage {
     private double[][] data;
     private int label;
     
+    /**
+     * Erstellt ein neues LabeledImage.
+     *
+     * @param data Daten
+     * @param label Klasse/Label
+     */
     public LabeledImage(double[][] data, int label) {
         this.data = data;
         this.label = label;

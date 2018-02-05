@@ -7,7 +7,6 @@ import de.fk.neuralnetwork.Neuron;
 import de.fk.neuralnetwork.training.TrainingExample;
 import java.util.Random;
 import static java.lang.Math.log;
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -16,7 +15,7 @@ import java.util.stream.IntStream;
  */
 public class NeuralMath {
     
-    private static Random rdm  = new Random(System.currentTimeMillis());
+    private static Random rdm  = new Random(/*System.currentTimeMillis()*/1081);
 
     /**
      * Multipliziert den Eingabearray mit den übergebenen Gewichten.

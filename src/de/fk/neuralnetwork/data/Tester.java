@@ -9,16 +9,61 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import javafx.util.Pair;
 
 /**
+ * Beinhaltet verschiedene Methoden zum Testen der Zuverlässigkeit eines
+ * neuronalen Netzes.
  *
  * @author Felix
  */
 public class Tester {
     
-    public static final int MNIST_IMAGE_FILE_MAGIC_NUMBER = 2051,
-            MNIST_LABEL_FILE_MAGIC_NUMBER = 2049;
+    /**
+     * Die Magic Number eines MNIST Image Files.
+     */
+    public static final int MNIST_IMAGE_FILE_MAGIC_NUMBER = 2051;
 
+    /**
+     * Die Magic Number eines MNIST Label Files.
+     */
+    public static final int MNIST_LABEL_FILE_MAGIC_NUMBER = 2049;
+
+    /**
+     * Gibt eine Hashmap zurück, die allen vom neuronalen Netz falsch
+     * klassifizierten LabeledImages ihren Wert der Fehlerfunktion zuweist.
+     * Die Einträge sind nach absteigendem Fehler bzw. steigender Genauigkeit
+     * geordnet.
+     *
+     * @param nn Netz, welches zum Klassifizieren verwendet werden soll
+     * @param imgs Zu klassifizierende Bilder
+     * @return HashMap
+     */
+    public static HashMap<LabeledImage, Double> findIncorrectlyClassified(NeuralNetwork nn, List<LabeledImage> imgs) {
+        return imgs.parallelStream()
+                .map(img -> new Pair<>(img, nn.trigger(NeuralMath.flatten(img.getData())).getOutput()))
+                .filter(p -> NeuralMath.getPredictedLabel(p.getValue()) != p.getKey().getLabel())
+                .map(p -> new Pair<>(p.getKey(), NeuralMath.getError(p.getValue(), NeuralMath.getOutputForLabel(p.getKey().getLabel(), p.getValue().length))))
+                .sorted((o1, o2) -> Double.compare(o2.getValue(), o1.getValue()))
+                .collect(Collectors.toMap(Pair::getKey, Pair::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+    }
+    
+    /**
+     * Testet die Zuverlässigkeit eines neuronalen Netzes anhand von
+     * MNIST-Daten.
+     *
+     * @param imageFile MNIST Image File
+     * @param labelFile MNIST Label File
+     * @param nn Zu testendes neuronales Netz
+     * @param maxImages Maximale Anzahl einzulesender Bilder
+     * @return Testergebnis mit Accuracy und Fehlerrate
+     * @throws IOException Lesefehler
+     * @see TestResult
+     */
     public static TestResult testFromMnist(String imageFile, String labelFile, NeuralNetwork nn, int maxImages) throws IOException {
         double error = 0, accuracy = 0;
         
@@ -57,32 +102,15 @@ public class Tester {
         return new TestResult(error, accuracy);
     }
     
-    public static int validateMnistImageFile(String imageFile) throws IOException {
-        DataInputStream dis = new DataInputStream(new FileInputStream(imageFile));
-        int mn = dis.readInt();
-        if(mn != MNIST_IMAGE_FILE_MAGIC_NUMBER) {
-            dis.close();
-            return -1;
-        }
-        int numImg = dis.readInt();
-        dis.close();
-        return numImg;
-    }
-    
-    public static int validateMnistLabelFile(String labelFile) throws IOException {
-        DataInputStream dis = new DataInputStream(new FileInputStream(labelFile));
-        if(dis.readInt() != MNIST_LABEL_FILE_MAGIC_NUMBER) {
-            dis.close();
-            return -1;
-        }
-        int numLabels = dis.readInt();
-        dis.close();
-        return numLabels;
-    }
-    
+    /**
+     * Beschreibt ein Testergebnis eines neuronalen Netzes.
+     * 
+     * Speichert die Accuracy und die Fehlerrate.
+     *
+     */
     public static class TestResult {
         
-        private double error, accuracy;
+        private final double error, accuracy;
 
         public TestResult(double error, double accuracy) {
             this.error = error;

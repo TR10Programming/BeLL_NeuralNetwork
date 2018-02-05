@@ -5,6 +5,7 @@ import de.fk.neuralnetwork.math.NeuralMath;
 import java.io.Serializable;
 
 /**
+ * Repräsentiert ein neuronales Netz.
  *
  * @author Felix
  */
@@ -13,7 +14,7 @@ public class NeuralNetwork implements Serializable {
     private static final long serialVersionUID = -336732427642969125L/*655591235934461712L*/;
     
     private NeuralLayer[] layers;
-    private int inputNeurons, outputNeurons;
+    private int inputNeurons;
     private boolean inputBias;
     
     public void sout() {
@@ -39,7 +40,6 @@ public class NeuralNetwork implements Serializable {
         layers[layerCount - 1] = new NeuralLayer(neuronsPerLayer + 1, neuronsPerLayer, false);
         layers[layerCount - 1].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
         this.inputNeurons = neuronsPerLayer;
-        this.outputNeurons = neuronsPerLayer;
     }
     
     /**
@@ -64,7 +64,6 @@ public class NeuralNetwork implements Serializable {
         layers[hiddenLayersCount] = new NeuralLayer(neuronsPerHiddenLayer + 1, outputNeurons, false);
         layers[hiddenLayersCount].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
         this.inputNeurons = inputNeurons;
-        this.outputNeurons = outputNeurons;
     }
     
     /**
@@ -86,9 +85,27 @@ public class NeuralNetwork implements Serializable {
         layers[neurons.length] = new NeuralLayer(neurons[neurons.length - 1] + 1, outputNeurons, false);
         layers[neurons.length].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
         this.inputNeurons = inputNeurons;
-        this.outputNeurons = outputNeurons;
     }
     
+    /**
+     * Generiert ein neuronales Netz mit der übergebenen Anzahl an
+     * Eingabeneuronen und den übergebenen Layern, optional mit Input Bias.
+     *
+     * @param inputNeurons Anzahl Eingabeneuronen
+     * @param inputBias Ob dem Input Layer ein Biasneuron hinzugefügt werden soll
+     * @param layers Layers
+     */
+    public NeuralNetwork(int inputNeurons, boolean inputBias, NeuralLayer... layers) {
+        this.inputNeurons = inputNeurons;
+        this.inputBias = inputBias;
+        this.layers = layers;
+    }
+    
+    /**
+     * Gibt das Output-Layer (das letzte Layer) zurück.
+     *
+     * @return Output Layer
+     */
     public NeuralLayer getOutputLayer() {
         return layers[layers.length - 1];
     }
@@ -96,7 +113,28 @@ public class NeuralNetwork implements Serializable {
     public NeuralLayer[] getLayers() {
         return layers;
     }
+
+    /**
+     * Gibt die Anzahl der Eingabeneuronen zurück.
+     *
+     * @return Anzahl Eingabeneuronen
+     */
+    public int getInputNeurons() {
+        return inputNeurons;
+    }
+
+    public boolean isInputBias() {
+        return inputBias;
+    }
     
+    /**
+     * Lässt die Eingabedaten das neuronale Netz durchlaufen und gibt alle
+     * Aktivierungen sowie die Ausgabe zurück.
+     *
+     * @param in Eingabeaktivierungen
+     * @return Aktivierungen
+     * @see NeuralNetworkState
+     */
     public NeuralNetworkState trigger(double[] in) {
         if(in.length != inputNeurons) throw new IllegalArgumentException("Es gibt " + inputNeurons + " Eingabeneuronen, es wurden aber " + in.length + " Werte eingegeben.");
         double[] vals = NeuralMath.addBias(in);
@@ -105,8 +143,13 @@ public class NeuralNetwork implements Serializable {
         return state;
     }
     
-    
-    
+    /**
+     * Muss vor jedem Start des Backpropagation-Algorithmus aufgerufen werden.
+     * Setzt alle gespeicherten Gewichtsänderungen zurück und initialisiert sie
+     * neu für die übergebene Anzahl an Threads.
+     *
+     * @param threads
+     */
     public void prepareParallelBackprop(int threads) {
         for(NeuralLayer layer : layers) layer.prepareForParallelBackprop(threads);
     }
