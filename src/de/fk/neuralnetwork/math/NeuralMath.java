@@ -7,6 +7,7 @@ import de.fk.neuralnetwork.Neuron;
 import de.fk.neuralnetwork.training.TrainingExample;
 import java.util.Random;
 import static java.lang.Math.log;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -185,6 +186,16 @@ public class NeuralMath {
         //for(int row = 0; row < in.length; row++) System.arraycopy(in[row], 0, flatData, row * in.length, in.length);
         IntStream.range(0, in.length).parallel().forEach(row -> System.arraycopy(in[row], 0, flatData, row * in.length, in.length));
         return flatData;
+    }
+    
+    /**
+     * Gibt eine exakte Kopie eines zweidimensionalen Double-Arrays zurück.
+     *
+     * @param matrix Zu klonender Array
+     * @return Exakte Kopie (deep copy)
+     */
+    public static double[][] deepCopy(double[][] matrix) {
+        return Arrays.stream(matrix).map(el -> el.clone()).toArray(double[][]::new);
     }
     
 }

@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Eine Schicht mit einer beliebigen Anzahl Neuronen.
@@ -71,7 +72,10 @@ public class NeuralLayer implements Serializable {
     }
     
     public void accumulate(double learningRate, double regularizationRate, double momentum) {
-        for(Neuron n : neurons) if(n instanceof BasicNeuron) ((BasicNeuron) n).accumulate(learningRate, regularizationRate, momentum);
+        Arrays.stream(neurons)
+                .parallel()
+                .filter(n -> n instanceof BasicNeuron)
+                .forEach(n -> ((BasicNeuron) n).accumulate(learningRate, regularizationRate, momentum));
     }
     
     public void prepareForParallelBackprop(int threads) {

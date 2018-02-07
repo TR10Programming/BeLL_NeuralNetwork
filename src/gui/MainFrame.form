@@ -173,12 +173,10 @@
       <Layout>
         <DimensionLayout dim="0">
           <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" attributes="0">
+              <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Component id="slThreadCount" pref="364" max="32767" attributes="0"/>
-                      <Component id="lblThreadCount" min="-2" max="-2" attributes="0"/>
-                      <Component id="lblThreadCount1" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Group type="102" alignment="0" attributes="0">
                           <Group type="103" groupAlignment="1" max="-2" attributes="0">
                               <Component id="tfLearningRate" alignment="0" max="32767" attributes="0"/>
@@ -202,6 +200,15 @@
                               </Group>
                           </Group>
                       </Group>
+                      <Group type="102" attributes="0">
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Component id="cbStochasticGradientDescent" min="-2" max="-2" attributes="0"/>
+                              <Component id="cbAdaptiveLearningRate" min="-2" max="-2" attributes="0"/>
+                              <Component id="lblThreadCount" min="-2" max="-2" attributes="0"/>
+                              <Component id="lblLearningRateLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      </Group>
                   </Group>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
@@ -209,20 +216,24 @@
         </DimensionLayout>
         <DimensionLayout dim="1">
           <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" alignment="0" attributes="0">
+              <Group type="102" alignment="1" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
+                  <Component id="cbStochasticGradientDescent" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
                   <Component id="lblThreadCount" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="slThreadCount" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="lblThreadCount1" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblLearningRateLabel" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="tfLearningRate" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="btnUpdateLearningRate" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="lblLearningRate" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                  <Component id="cbAdaptiveLearningRate" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="lblBatchSize" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="lblExamplesPerThread" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -232,7 +243,7 @@
                       <Component id="spBatchSize" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="spExamplesPerThread" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="105" max="32767" attributes="0"/>
+                  <EmptySpace pref="54" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -262,7 +273,7 @@
             <Property name="text" type="java.lang.String" value="Threads"/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JLabel" name="lblThreadCount1">
+        <Component class="javax.swing.JLabel" name="lblLearningRateLabel">
           <Properties>
             <Property name="text" type="java.lang.String" value="Lernrate"/>
           </Properties>
@@ -313,6 +324,23 @@
           <Properties>
             <Property name="text" type="java.lang.String" value="0.01"/>
           </Properties>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="cbAdaptiveLearningRate">
+          <Properties>
+            <Property name="selected" type="boolean" value="true"/>
+            <Property name="text" type="java.lang.String" value="Lernratenautomatik"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="cbAdaptiveLearningRateActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="cbStochasticGradientDescent">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Stochastic Gradient Descent"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="cbStochasticGradientDescentActionPerformed"/>
+          </Events>
         </Component>
       </SubComponents>
     </Container>

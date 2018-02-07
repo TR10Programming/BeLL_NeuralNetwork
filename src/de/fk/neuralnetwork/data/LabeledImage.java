@@ -1,11 +1,32 @@
 package de.fk.neuralnetwork.data;
 
+import java.util.Random;
+
 /**
  * Repräsentiert ein Graustufenbild mit einem Label.
  *
  * @author Felix
  */
 public class LabeledImage {
+    
+    /**
+     * Maximale Drehung des Bildes beim Transformieren in beide Richtungen
+     * (in Rad).
+     *
+     */
+    public static final double ROTATION_BOUNDS = Math.PI / 5.0;//+-36°
+    
+    /**
+     * Maximale Vergrößerung/Verkleinerung beim Transformieren.
+     *
+     */
+    public static final double SCALE_BOUNDS = 0.2;//+-20%
+    
+    /**
+     * Maximale Verschiebung in x- und y-Richtung beim Transformieren.
+     *
+     */
+    public static final int SHIFT_BOUNDS = 3;//+-3px
 
     private double[][] data;
     private int label;
@@ -44,6 +65,31 @@ public class LabeledImage {
             sb.append("\n");
         }
         return sb.toString();
+    }
+    
+    /**
+     * Gibt eine transformierte Kopie dieses Bildes zurück.
+     * 
+     * Folgende Transformationen werden angewendet: Rotation.
+     *
+     * @param r Random zum Bestimmen der Transformationen
+     * @return Transformierte Kopie
+     * @see LabeledImage#ROTATION_BOUNDS
+     */
+    public LabeledImage cloneAndTransform(Random r) {
+        //Daten transformieren
+        double[][] newData = Preprocessing.rotate(
+                Preprocessing.scale(
+                        Preprocessing.shift(
+                                data,
+                                r.nextInt(2 * SHIFT_BOUNDS) - SHIFT_BOUNDS,
+                                r.nextInt(2 * SHIFT_BOUNDS) - SHIFT_BOUNDS
+                        ),
+                        1 + r.nextDouble() * 2 * SCALE_BOUNDS - SCALE_BOUNDS
+                ),
+                r.nextDouble() * 2 * ROTATION_BOUNDS - ROTATION_BOUNDS
+        );
+        return new LabeledImage(newData, label);
     }
     
 }

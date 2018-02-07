@@ -37,7 +37,7 @@ public class Main {
         //for(int i = 0; i < 10; i++) System.out.println(ImageContainer.getImages().get(i).toString());
         NeuralNetwork nn = new NeuralNetwork(1, 300, 28*28, 10);
         
-        LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer.getImages(), 28, 28, 10);
+        LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer::getImages, 28, 28, 10);
         
         Backpropagator bp = new Backpropagator(nn, 0.03, 0, 0);
         FileOutputStream fos = null;

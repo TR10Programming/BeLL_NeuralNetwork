@@ -7,7 +7,10 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * Zum Lernen anhand von Bilddaten. Speichert alle Bilder vom Typ LabeledImage.
@@ -44,6 +47,28 @@ public class ImageContainer {
      */
     public static List<LabeledImage> getImages() {
         return images;
+    }
+    
+    /**
+     * Ordnet die Trainingsbeispiele in zufälliger Reihenfolge an.
+     *
+     */
+    public static void shuffle() {
+        Collections.shuffle(images);
+    }
+    
+    /**
+     * Transformiert alle Bilder zufällig.
+     * 
+     * Achtung: Die Originalbilder gehen verloren.
+     *
+     * @param transformRdm Random zum Bestimmen der Stärke der Transformationen
+     */
+    public static void transformAll(Random transformRdm) {
+        images = images
+                .parallelStream()
+                .map(limg -> limg.cloneAndTransform(transformRdm))
+                .collect(Collectors.toCollection(ArrayList<LabeledImage>::new));
     }
     
     /**

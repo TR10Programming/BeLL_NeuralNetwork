@@ -5,6 +5,7 @@ import de.fk.neuralnetwork.data.LabeledImage;
 import de.fk.neuralnetwork.data.Tester;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 /**
  *
@@ -47,6 +48,9 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
         miImportMnist = new javax.swing.JMenuItem();
         miReset = new javax.swing.JMenuItem();
         miClose = new javax.swing.JMenuItem();
+        mnEdit = new javax.swing.JMenu();
+        miShuffle = new javax.swing.JMenuItem();
+        miTransformAll = new javax.swing.JMenuItem();
         mnView = new javax.swing.JMenu();
         miShowAll = new javax.swing.JMenuItem();
         miShowIncorrect = new javax.swing.JMenuItem();
@@ -117,6 +121,28 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
         mnFile.add(miClose);
 
         menuBar.add(mnFile);
+
+        mnEdit.setText("Bearbeiten");
+
+        miShuffle.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.ALT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        miShuffle.setText("Zufällig anordnen");
+        miShuffle.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miShuffleActionPerformed(evt);
+            }
+        });
+        mnEdit.add(miShuffle);
+
+        miTransformAll.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        miTransformAll.setText("Alle transformieren");
+        miTransformAll.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miTransformAllActionPerformed(evt);
+            }
+        });
+        mnEdit.add(miTransformAll);
+
+        menuBar.add(mnEdit);
 
         mnView.setText("Ansicht");
 
@@ -190,6 +216,16 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
         updateImages();
     }//GEN-LAST:event_miShowAllActionPerformed
 
+    private void miShuffleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miShuffleActionPerformed
+        ImageContainer.shuffle();
+        getDisplayPanel().repaint();
+    }//GEN-LAST:event_miShuffleActionPerformed
+
+    private void miTransformAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miTransformAllActionPerformed
+        ImageContainer.transformAll(new Random());
+        getDisplayPanel().setImageList(ImageContainer.getImages());
+    }//GEN-LAST:event_miTransformAllActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBack;
     private javax.swing.JButton btnForward;
@@ -201,6 +237,9 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
     private javax.swing.JMenuItem miReset;
     private javax.swing.JMenuItem miShowAll;
     private javax.swing.JMenuItem miShowIncorrect;
+    private javax.swing.JMenuItem miShuffle;
+    private javax.swing.JMenuItem miTransformAll;
+    private javax.swing.JMenu mnEdit;
     private javax.swing.JMenu mnFile;
     private javax.swing.JMenu mnView;
     private javax.swing.JTextField tfPosition;
