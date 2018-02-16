@@ -17,16 +17,34 @@ public class LabeledImage {
     public static final double ROTATION_BOUNDS = Math.PI / 5.0;//+-36°
     
     /**
+     * Wahrscheinlichkeit, dass das Bild rotiert wird.
+     *
+     */
+    public static final double ROTATION_CHANCE = 0.7;//70%
+    
+    /**
      * Maximale Vergrößerung/Verkleinerung beim Transformieren.
      *
      */
-    public static final double SCALE_BOUNDS = 0.2;//+-20%
+    public static final double SCALE_BOUNDS = 0.25;//+-25%
+    
+    /**
+     * Wahrscheinlichkeit, dass das Bild skaliert wird.
+     *
+     */
+    public static final double SCALE_CHANCE = 0.9;//90%
     
     /**
      * Maximale Verschiebung in x- und y-Richtung beim Transformieren.
      *
      */
-    public static final int SHIFT_BOUNDS = 3;//+-3px
+    public static final int SHIFT_BOUNDS = 4;//+-4px
+    
+    /**
+     * Wahrscheinlichkeit, dass das Bild verschoben wird.
+     *
+     */
+    public static final double SHIFT_CHANCE = 1.0;//100%
 
     private double[][] data;
     private int label;
@@ -78,18 +96,14 @@ public class LabeledImage {
      */
     public LabeledImage cloneAndTransform(Random r) {
         //Daten transformieren
-        double[][] newData = Preprocessing.rotate(
-                Preprocessing.scale(
-                        Preprocessing.shift(
-                                data,
-                                r.nextInt(2 * SHIFT_BOUNDS) - SHIFT_BOUNDS,
-                                r.nextInt(2 * SHIFT_BOUNDS) - SHIFT_BOUNDS
-                        ),
-                        1 + r.nextDouble() * 2 * SCALE_BOUNDS - SCALE_BOUNDS
-                ),
-                r.nextDouble() * 2 * ROTATION_BOUNDS - ROTATION_BOUNDS
-        );
-        return new LabeledImage(newData, label);
+        double[][] newData = null;
+        if(r.nextDouble() < SHIFT_CHANCE)
+            newData = Preprocessing.shift(data, r.nextInt(2 * SHIFT_BOUNDS) - SHIFT_BOUNDS, r.nextInt(2 * SHIFT_BOUNDS) - SHIFT_BOUNDS);
+        if(r.nextDouble() < SCALE_CHANCE)
+            newData = Preprocessing.scale(newData == null ? data : newData, 1 + r.nextDouble() * 2 * SCALE_BOUNDS - SCALE_BOUNDS);
+        if(r.nextDouble() < ROTATION_CHANCE)
+            newData = Preprocessing.rotate(newData == null ? data : newData, r.nextDouble() * 2 * ROTATION_BOUNDS - ROTATION_BOUNDS);
+        return new LabeledImage(newData == null ? data : newData, label);
     }
     
 }

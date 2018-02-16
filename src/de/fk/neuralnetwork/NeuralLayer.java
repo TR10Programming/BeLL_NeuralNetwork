@@ -48,6 +48,10 @@ public class NeuralLayer implements Serializable {
         return Arrays.stream(neurons).mapToDouble(n -> n.trigger(in, act)).toArray();
     }
     
+    public double[] triggerParallel(double[] in) {
+        return Arrays.stream(neurons).parallel().mapToDouble(n -> n.trigger(in, act)).toArray();
+    }
+    
     public double[] getErrorDeltas(double[] errors, double[] activationsBefore) {
         ArrayList<Double> errorDeltas = new ArrayList<>();
         for(int i = 0, j = 0; i < errors.length && j < neurons.length; i++, j++) {
@@ -69,6 +73,10 @@ public class NeuralLayer implements Serializable {
     
     public double[] getErrors(NeuralLayer nextLayer, double[] errorDeltasNextLayer) {
         return IntStream.range(0, neurons.length).filter(i -> neurons[i] instanceof BasicNeuron).mapToDouble(i -> neurons[i].getError(i, nextLayer, errorDeltasNextLayer)).toArray();
+    }
+    
+    public double[] getErrorsParallel(NeuralLayer nextLayer, double[] errorDeltasNextLayer) {
+        return IntStream.range(0, neurons.length).parallel().filter(i -> neurons[i] instanceof BasicNeuron).mapToDouble(i -> neurons[i].getError(i, nextLayer, errorDeltasNextLayer)).toArray();
     }
     
     public void accumulate(double learningRate, double regularizationRate, double momentum) {

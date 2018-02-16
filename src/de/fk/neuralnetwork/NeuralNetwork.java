@@ -144,6 +144,22 @@ public class NeuralNetwork implements Serializable {
     }
     
     /**
+     * Lässt die Eingabedaten das neuronale Netz durchlaufen und gibt alle
+     * Aktivierungen sowie die Ausgabe zurück. (Nutzt parallele Streams)
+     *
+     * @param in Eingabeaktivierungen
+     * @return Aktivierungen
+     * @see NeuralNetworkState
+     */
+    public NeuralNetworkState triggerParallel(double[] in) {
+        if(in.length != inputNeurons) throw new IllegalArgumentException("Es gibt " + inputNeurons + " Eingabeneuronen, es wurden aber " + in.length + " Werte eingegeben.");
+        double[] vals = NeuralMath.addBias(in);
+        NeuralNetworkState state = new NeuralNetworkState();
+        for(NeuralLayer layer : layers) state.addLayerActivations(vals = layer.triggerParallel(vals));
+        return state;
+    }
+    
+    /**
      * Muss vor jedem Start des Backpropagation-Algorithmus aufgerufen werden.
      * Setzt alle gespeicherten Gewichtsänderungen zurück und initialisiert sie
      * neu für die übergebene Anzahl an Threads.

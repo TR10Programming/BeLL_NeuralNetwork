@@ -6,10 +6,7 @@ import de.fk.neuralnetwork.NeuralNetwork;
 import de.fk.neuralnetwork.NeuralNetworkState;
 import de.fk.neuralnetwork.math.NeuralMath;
 import de.fk.neuralnetwork.training.TrainingExample;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.concurrent.BrokenBarrierException;
@@ -79,11 +76,14 @@ public class Backpropagator {
         Thread trainThread;
         (trainThread = new Thread(() -> {
         
-            long startTime = System.currentTimeMillis();
             int exampleCount = trainingSupplier.getExampleCount(), logIt = logEveryXIterations;
+            long startTime = System.currentTimeMillis();
+            trainingSupplier.reset();
+            System.out.println("Transformation: " + ((System.currentTimeMillis() / startTime) / (double) exampleCount) + " ms/example");
             net.prepareParallelBackprop(1);
             System.out.println("Training with " + exampleCount + " examples per iteration.");
             error = 0.0;
+            startTime = System.currentTimeMillis();
             
             //Trainingsschleife
             for(iteration = 0; !stopped && iteration < iterations; iteration++, logIt++) {
@@ -92,7 +92,7 @@ public class Backpropagator {
                 lastError = error;
                 error = 0.0;
                 for(int example = 0; example < exampleCount; example++) {
-                    error += backpropStep(trainingSupplier.nextTrainingExample(), 0);
+                    error += backpropStepParallel(trainingSupplier.nextTrainingExample());
                     //Lernen/Gewichte updaten
                     Arrays.stream(net.getLayers()).forEach(l -> l.accumulate(learningRate, regularizationRate, momentum));
                 }
@@ -255,11 +255,14 @@ public class Backpropagator {
     
     /**
      * Führt einen Backprop-Schritt aus und gibt den Fehler zurück (die Gewichte
-     * werden nicht geupdatet!)
+     * werden nicht geupdatet!).
+     * 
+     * Sollte nur für Batch Gradient Descent verwendet werden.
      *
      * @param trainingExample
      * @param threadId ID des ausführenden Threads (bei Single-Threading 0)
      * @return
+     * @see Backpropagator#backpropStepParallel(de.fk.neuralnetwork.training.TrainingExample) Für Stochastic Gradient Descent
      */
     public double backpropStep(TrainingExample trainingExample, int threadId) {
         NeuralLayer[] layers = net.getLayers();
@@ -284,6 +287,44 @@ public class Backpropagator {
             errorDeltas = layers[i].getErrorDeltas(errors, activationsBefore);
             //Berechne Accumulators
             layers[i].calcAccumulatorMatrices(errorDeltas, activationsBefore, threadId);
+        }
+        //Fehler berechnen
+        return NeuralMath.getRegularizedError(out.getOutput(), expectedOutput, regularizationRate, net);
+    }
+    
+    /**
+     * Führt einen Backprop-Schritt aus und gibt den Fehler zurück (die Gewichte
+     * werden nicht geupdatet!) (nutzt parallele Streams).
+     * 
+     * Sollte nur für Stochastic Gradient Descent verwendet werden.
+     *
+     * @param trainingExample
+     * @return Fehler E
+     * @see Backpropagator#backpropStep(de.fk.neuralnetwork.training.TrainingExample, int) Für paralleles Lernen (Batch Gradient Descent)
+     */
+    public double backpropStepParallel(TrainingExample trainingExample) {
+        NeuralLayer[] layers = net.getLayers();
+        //Sammeln der Trainingsdaten
+        double[] input = trainingExample.getIn(), expectedOutput = trainingExample.getOut();
+        //Aktivierungen berechnen
+        NeuralNetworkState out = net.triggerParallel(input);
+        //System.out.println("Training for " + Arrays.toString(input) + " -> " + Arrays.toString(expectedOutput));
+        //Output Layer
+        NeuralLayer outputLayer = layers[layers.length - 1];
+        //Berechne Errors & Error Deltas
+        double[] activationsBefore = layers.length > 1 ? out.getLayerActivations(layers.length - 2) : NeuralMath.addBias(input),
+                errors = NeuralMath.getErrors(out.getOutput(), expectedOutput),
+                errorDeltas = outputLayer.getErrorDeltas(errors, activationsBefore);
+        //Berechne Accumulators
+        outputLayer.calcAccumulatorMatrices(errorDeltas, activationsBefore, 0);
+        //Hidden Layer
+        for(int i = layers.length - 2; i >= 0; i--) {
+            //Berechne Errors & Error Deltas
+            activationsBefore = i > 0 ? out.getLayerActivations(i - 1) : NeuralMath.addBias(input);
+            errors = layers[i].getErrorsParallel(layers[i + 1], errorDeltas);
+            errorDeltas = layers[i].getErrorDeltas(errors, activationsBefore);
+            //Berechne Accumulators
+            layers[i].calcAccumulatorMatrices(errorDeltas, activationsBefore, 0);
         }
         //Fehler berechnen
         return NeuralMath.getRegularizedError(out.getOutput(), expectedOutput, regularizationRate, net);

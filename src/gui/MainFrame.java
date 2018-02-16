@@ -48,8 +48,8 @@ public class MainFrame extends javax.swing.JFrame {
     
     private void createNeuralNet() {
         if(bp != null) bp.stopTraining();
-        //nn = new NeuralNetwork(1, 300, 28*28, 10);
-        nn = new NeuralNetwork(28 * 28, 10, new int[]{300, 100});
+        //nn = new NeuralNetwork(1, 800, 28*28, 10);
+        nn = new NeuralNetwork(28 * 28, 10, new int[]{800, 500, 150});
         if(bp != null) bp.setNet(nn);
     }
     
