@@ -4,6 +4,8 @@ import de.fk.neuralnetwork.Main;
 import de.fk.neuralnetwork.NeuralNetwork;
 import de.fk.neuralnetwork.data.ImageContainer;
 import de.fk.neuralnetwork.io.FileIO;
+import de.fk.neuralnetwork.io.JSExport;
+import de.fk.neuralnetwork.io.PHPExport;
 import de.fk.neuralnetwork.learning.Backpropagator;
 import de.fk.neuralnetwork.training.LabeledImageTrainingSupplier;
 import java.io.File;
@@ -12,10 +14,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.util.Pair;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
@@ -39,26 +44,41 @@ public class MainFrame extends javax.swing.JFrame {
         initComponents();
         bp = new Backpropagator(nn, 0.01, 0, 0);
         bp.setLearningRateUpdated(this::updateLearningRate);
+        bp.setTrainingProgressUpdated(this::updateTrainingProgress);
         lblLearningRate.setText(bp.getLearningRate() + "");
         tfLearningRate.setText(bp.getLearningRate() + "");
         spExamplesPerThread.setValue(batchSize / threadCount);
         batchSize = ((int) spExamplesPerThread.getValue()) * threadCount;
         spBatchSize.setValue(batchSize);
+        updateNetSettings();
     }
     
     private void createNeuralNet() {
         if(bp != null) bp.stopTraining();
         //nn = new NeuralNetwork(1, 800, 28*28, 10);
-        nn = new NeuralNetwork(28 * 28, 10, new int[]{800, 500, 150});
+        nn = new NeuralNetwork(28 * 28, 10, new int[]{300, 100});
         if(bp != null) bp.setNet(nn);
     }
     
     public final void updateLearningRate() {
-        lblLearningRate.setText(bp.getLearningRate() + "");
+        SwingUtilities.invokeLater(() -> {
+            lblLearningRate.setText(bp.getLearningRate() + "");
+        });
+    }
+    
+    public final void updateNetSettings() {
+        lblNeurons.setText(Arrays.toString(nn.getNeuronCounts()));
     }
     
     public NeuralNetwork getNet() {
         return nn;
+    }
+    
+    public final void updateTrainingProgress(Pair<Double, Double> progress) {
+        SwingUtilities.invokeLater(() -> {
+            lblError.setText(progress.getKey() == null ? "?????" : String.format("%.2f", progress.getKey()));
+            lblAccuracy.setText(progress.getValue() == null ? "?????" : String.format("%.2f", progress.getValue() * 100) + "%");
+        });
     }
 
     /**
@@ -88,6 +108,17 @@ public class MainFrame extends javax.swing.JFrame {
         panelActions = new javax.swing.JPanel();
         btnTrain = new javax.swing.JButton();
         btnStopTraining = new javax.swing.JButton();
+        panelDisplay = new javax.swing.JPanel();
+        lblError = new javax.swing.JLabel();
+        lblErrorLbl = new javax.swing.JLabel();
+        lblAccuracyLbl = new javax.swing.JLabel();
+        lblAccuracy = new javax.swing.JLabel();
+        panelLogging = new javax.swing.JPanel();
+        cbEnableLogging = new javax.swing.JCheckBox();
+        tfLogFile = new javax.swing.JTextField();
+        panelNetwork = new javax.swing.JPanel();
+        lblNeuronsLbl = new javax.swing.JLabel();
+        lblNeurons = new javax.swing.JLabel();
         menuBar = new javax.swing.JMenuBar();
         mbNetwork = new javax.swing.JMenu();
         miOpen = new javax.swing.JMenuItem();
@@ -103,6 +134,8 @@ public class MainFrame extends javax.swing.JFrame {
         FileNameExtensionFilter saveDefaultFilter = new FileNameExtensionFilter("Neuronales Netz (JSON)", "jnet");
         saveFileChooser.addChoosableFileFilter(saveDefaultFilter);
         saveFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Neuronales Netz (Formatiertes JSON)", "jfnet"));
+        saveFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JavaScript Export", "js"));
+        saveFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("PHP Export", "php"));
         saveFileChooser.setFileFilter(saveDefaultFilter);
 
         FileNameExtensionFilter openDefaultFilter = new FileNameExtensionFilter("Neuronales Netz (JSON)", "jnet", "jfnet");
@@ -182,7 +215,7 @@ public class MainFrame extends javax.swing.JFrame {
             .addGroup(panelTrainingLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(slThreadCount, javax.swing.GroupLayout.DEFAULT_SIZE, 364, Short.MAX_VALUE)
+                    .addComponent(slThreadCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(panelTrainingLayout.createSequentialGroup()
                         .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addComponent(tfLearningRate, javax.swing.GroupLayout.Alignment.LEADING)
@@ -212,7 +245,7 @@ public class MainFrame extends javax.swing.JFrame {
         panelTrainingLayout.setVerticalGroup(
             panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelTrainingLayout.createSequentialGroup()
-                .addContainerGap()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(cbStochasticGradientDescent)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblThreadCount)
@@ -234,8 +267,7 @@ public class MainFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(spBatchSize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(spExamplesPerThread, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(54, Short.MAX_VALUE))
+                    .addComponent(spExamplesPerThread, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
 
         panelActions.setBorder(javax.swing.BorderFactory.createTitledBorder("Aktionen"));
@@ -263,7 +295,7 @@ public class MainFrame extends javax.swing.JFrame {
                 .addGroup(panelActionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnTrain)
                     .addComponent(btnStopTraining, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(42, Short.MAX_VALUE))
         );
         panelActionsLayout.setVerticalGroup(
             panelActionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -272,7 +304,103 @@ public class MainFrame extends javax.swing.JFrame {
                 .addComponent(btnTrain)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnStopTraining)
-                .addContainerGap(12, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        panelDisplay.setBorder(javax.swing.BorderFactory.createTitledBorder("Fortschritt"));
+
+        lblError.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
+        lblError.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        lblError.setText("?????");
+
+        lblErrorLbl.setText("Fehler:");
+
+        lblAccuracyLbl.setText("Accuracy:");
+
+        lblAccuracy.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
+        lblAccuracy.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        lblAccuracy.setText("?????");
+
+        javax.swing.GroupLayout panelDisplayLayout = new javax.swing.GroupLayout(panelDisplay);
+        panelDisplay.setLayout(panelDisplayLayout);
+        panelDisplayLayout.setHorizontalGroup(
+            panelDisplayLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelDisplayLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelDisplayLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(panelDisplayLayout.createSequentialGroup()
+                        .addComponent(lblAccuracyLbl)
+                        .addGap(18, 18, 18)
+                        .addComponent(lblAccuracy, javax.swing.GroupLayout.DEFAULT_SIZE, 127, Short.MAX_VALUE))
+                    .addGroup(panelDisplayLayout.createSequentialGroup()
+                        .addComponent(lblErrorLbl)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(lblError, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGap(6, 6, 6))
+        );
+        panelDisplayLayout.setVerticalGroup(
+            panelDisplayLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelDisplayLayout.createSequentialGroup()
+                .addGroup(panelDisplayLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblError)
+                    .addComponent(lblErrorLbl))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(panelDisplayLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblAccuracy)
+                    .addComponent(lblAccuracyLbl))
+                .addGap(0, 0, Short.MAX_VALUE))
+        );
+
+        panelLogging.setBorder(javax.swing.BorderFactory.createTitledBorder("Logging"));
+
+        cbEnableLogging.setSelected(true);
+        cbEnableLogging.setText("Logdatei anlegen unter");
+
+        tfLogFile.setText("errorlog.txt");
+
+        javax.swing.GroupLayout panelLoggingLayout = new javax.swing.GroupLayout(panelLogging);
+        panelLogging.setLayout(panelLoggingLayout);
+        panelLoggingLayout.setHorizontalGroup(
+            panelLoggingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelLoggingLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(cbEnableLogging)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(tfLogFile)
+                .addContainerGap())
+        );
+        panelLoggingLayout.setVerticalGroup(
+            panelLoggingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelLoggingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addComponent(cbEnableLogging)
+                .addComponent(tfLogFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        );
+
+        panelNetwork.setBorder(javax.swing.BorderFactory.createTitledBorder("Neuronales Netz"));
+
+        lblNeuronsLbl.setText("Neuronen:");
+
+        lblNeurons.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        lblNeurons.setText("[]");
+
+        javax.swing.GroupLayout panelNetworkLayout = new javax.swing.GroupLayout(panelNetwork);
+        panelNetwork.setLayout(panelNetworkLayout);
+        panelNetworkLayout.setHorizontalGroup(
+            panelNetworkLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelNetworkLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lblNeuronsLbl)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(lblNeurons, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        panelNetworkLayout.setVerticalGroup(
+            panelNetworkLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelNetworkLayout.createSequentialGroup()
+                .addGroup(panelNetworkLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblNeuronsLbl)
+                    .addComponent(lblNeurons))
+                .addGap(0, 11, Short.MAX_VALUE))
         );
 
         mbNetwork.setText("Netz");
@@ -349,19 +477,31 @@ public class MainFrame extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(panelTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(panelActions, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(panelActions, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(panelDisplay, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(panelLogging, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panelNetwork, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(panelActions, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(panelActions, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panelDisplay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(panelTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(19, 19, 19))
+                .addComponent(panelNetwork, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(panelTraining, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panelLogging, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(24, 24, 24))
         );
 
         pack();
@@ -376,9 +516,9 @@ public class MainFrame extends javax.swing.JFrame {
         LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer::getImages, 28, 28, 10);
         
         FileOutputStream fos = null;
-        try {
+        if(cbEnableLogging.isSelected()) try {
             //Logging
-            fos = new FileOutputStream("errorlog.txt", true);
+            fos = new FileOutputStream(!tfLogFile.getText().isEmpty() ? tfLogFile.getText() : "errorlog.txt", true);
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -412,7 +552,9 @@ public class MainFrame extends javax.swing.JFrame {
                     ext = ff.getExtensions()[0].toLowerCase();
                     f = new File(f.toString() + "." + ext);
                 }
-                FileIO.write(f, nn, "jfnet".equalsIgnoreCase(ext));
+                if(ext.equalsIgnoreCase("js")) JSExport.write(f, nn);
+                else if(ext.equalsIgnoreCase("php")) PHPExport.write(f, nn);
+                else FileIO.write(f, nn, "jfnet".equalsIgnoreCase(ext));
             } catch (IOException | NullPointerException ex) {
                 Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -446,6 +588,7 @@ public class MainFrame extends javax.swing.JFrame {
                         JOptionPane.showMessageDialog(this, "Fehler: Unbekannter Dateityp", "Fehler", JOptionPane.ERROR_MESSAGE);
                         break;
                 }
+                updateNetSettings();
             } catch (IOException | NullPointerException | ClassNotFoundException ex) {
                 Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -463,6 +606,7 @@ public class MainFrame extends javax.swing.JFrame {
 
     private void miResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miResetActionPerformed
         createNeuralNet();
+        updateNetSettings();
     }//GEN-LAST:event_miResetActionPerformed
 
     private void slThreadCountStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_slThreadCountStateChanged
@@ -530,11 +674,18 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnTrain;
     private javax.swing.JButton btnUpdateLearningRate;
     private javax.swing.JCheckBox cbAdaptiveLearningRate;
+    private javax.swing.JCheckBox cbEnableLogging;
     private javax.swing.JCheckBox cbStochasticGradientDescent;
+    private javax.swing.JLabel lblAccuracy;
+    private javax.swing.JLabel lblAccuracyLbl;
     private javax.swing.JLabel lblBatchSize;
+    private javax.swing.JLabel lblError;
+    private javax.swing.JLabel lblErrorLbl;
     private javax.swing.JLabel lblExamplesPerThread;
     private javax.swing.JLabel lblLearningRate;
     private javax.swing.JLabel lblLearningRateLabel;
+    private javax.swing.JLabel lblNeurons;
+    private javax.swing.JLabel lblNeuronsLbl;
     private javax.swing.JLabel lblThreadCount;
     private javax.swing.JMenu mbNetwork;
     private javax.swing.JMenu mbTest;
@@ -548,11 +699,15 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JMenuItem miTrainingExamples;
     private javax.swing.JFileChooser openFileChooser;
     private javax.swing.JPanel panelActions;
+    private javax.swing.JPanel panelDisplay;
+    private javax.swing.JPanel panelLogging;
+    private javax.swing.JPanel panelNetwork;
     private javax.swing.JPanel panelTraining;
     private javax.swing.JFileChooser saveFileChooser;
     private javax.swing.JSlider slThreadCount;
     private javax.swing.JSpinner spBatchSize;
     private javax.swing.JSpinner spExamplesPerThread;
     private javax.swing.JTextField tfLearningRate;
+    private javax.swing.JTextField tfLogFile;
     // End of variables declaration//GEN-END:variables
 }

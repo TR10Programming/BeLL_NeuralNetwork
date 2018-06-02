@@ -52,6 +52,12 @@ public abstract class TrainingSupplier {
         return examples;
     }
     
+    public TrainingExample[] originalTrainingExamples() {
+        TrainingExample[] examples = supplyOriginalTrainingExamples();
+        if(autoAddBias) for(int i = 0; i < examples.length; i++) NeuralMath.addBias(examples[i]);
+        return examples;
+    }
+    
     /**
      * Stellt das nächste Trainingsbeispiel bereit.
      *
@@ -66,6 +72,13 @@ public abstract class TrainingSupplier {
      * @return n Trainingsbeispiele
      */
     protected abstract TrainingExample[] supplyTrainingExamples(int count);
+    
+    /**
+     * Stellt alle verfügbaren Trainingsbeispiele ohne Transformationen bereit.
+     *
+     * @return Alle Originalbeispiele
+     */
+    protected abstract TrainingExample[] supplyOriginalTrainingExamples();
     
     /**
      * Setzt den TrainingSupplier auf das erste Trainingsbeispiel zurück.

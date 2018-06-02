@@ -48,4 +48,9 @@ public class ArrayTrainingSupplier extends TrainingSupplier {
         return examples;
     }
 
+    @Override
+    protected TrainingExample[] supplyOriginalTrainingExamples() {
+        return trainingExamples.toArray(new TrainingExample[trainingExamples.size()]);
+    }
+
 }

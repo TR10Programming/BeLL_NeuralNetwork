@@ -127,6 +127,13 @@ public class NeuralNetwork implements Serializable {
         return inputBias;
     }
     
+    public int[] getNeuronCounts() {
+        int[] neuronCounts = new int[layers.length + 1];
+        neuronCounts[0] = inputNeurons + (inputBias ? 1 : 0);
+        for(int i = 0; i < layers.length; i++) neuronCounts[i + 1] = layers[i].getNeurons().length;
+        return neuronCounts;
+    }
+    
     /**
      * Lässt die Eingabedaten das neuronale Netz durchlaufen und gibt alle
      * Aktivierungen sowie die Ausgabe zurück.

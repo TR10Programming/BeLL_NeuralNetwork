@@ -11,8 +11,10 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.util.Pair;
 
 /**
  *
@@ -21,12 +23,16 @@ import java.util.logging.Logger;
 public class Backpropagator {
     
     public static final int SAVE_EVERY_X_ITERATIONS = 10;
-    public static final double ADAPTIVE_LEARNING_RATE_DOWN = 0.7, ADAPTIVE_LEARNING_RATE_UP = 1.03;
+    public static final double ADAPTIVE_LEARNING_RATE_DOWN_MIN = 0.7,
+            ADAPTIVE_LEARNING_RATE_UP_MIN = 1.05,
+            ADAPTIVE_LEARNING_RATE_DOWN_MAX = 0.9,
+            ADAPTIVE_LEARNING_RATE_UP_MAX = 1.2;
 
     private NeuralNetwork net;
     private double learningRate, regularizationRate, momentum;
     private boolean stopped, training, adaptiveLREnabled;
     private Runnable learningRateUpdated = null;
+    private Consumer<Pair<Double, Double>> trainingProgressUpdated = null;
     
     public Backpropagator(NeuralNetwork net, double learningRate, double regularizationRate, double momentum) {
         this.net = net;
@@ -57,6 +63,13 @@ public class Backpropagator {
     public void setAdaptiveLearningRateEnabled(boolean adaptiveLREnabled) {
         this.adaptiveLREnabled = adaptiveLREnabled;
     }
+
+    public void setTrainingProgressUpdated(Consumer<Pair<Double, Double>> trainingProgressUpdated) {
+        this.trainingProgressUpdated = trainingProgressUpdated;
+    }
+    
+    private double error = 0.0, lastError = -1.0, accuracy = 0.0;
+    private int iteration = 0;
     
     /**
      * Startet den Trainingsvorgang.
@@ -79,6 +92,7 @@ public class Backpropagator {
             int exampleCount = trainingSupplier.getExampleCount(), logIt = logEveryXIterations;
             long startTime = System.currentTimeMillis();
             trainingSupplier.reset();
+            TrainingExample[] originalTrainingExamples = trainingSupplier.originalTrainingExamples();
             System.out.println("Transformation: " + ((System.currentTimeMillis() / startTime) / (double) exampleCount) + " ms/example");
             net.prepareParallelBackprop(1);
             System.out.println("Training with " + exampleCount + " examples per iteration.");
@@ -88,21 +102,35 @@ public class Backpropagator {
             //Trainingsschleife
             for(iteration = 0; !stopped && iteration < iterations; iteration++, logIt++) {
                 
-                //Alle Trainingsbeispiele ansehen
-                lastError = error;
-                error = 0.0;
+                //Backpropagation; Alle Trainingsbeispiele ansehen
+                System.out.print("Backpropagating...");
                 for(int example = 0; example < exampleCount; example++) {
-                    error += backpropStepParallel(trainingSupplier.nextTrainingExample());
+                    double[] out = backpropStepParallel(trainingSupplier.nextTrainingExample());
                     //Lernen/Gewichte updaten
                     Arrays.stream(net.getLayers()).forEach(l -> l.accumulate(learningRate, regularizationRate, momentum));
                 }
-                error /= exampleCount;
+                
+                //Forward Propagation wiederholen, um Error & Accuracy zu bestimmen
+                lastError = error;
+                error = 0.0;
+                accuracy = 0.0;
+                System.out.println("Determining error and accuracy...");
+                for(TrainingExample originalTrainingExample : originalTrainingExamples) {
+                    double[] out = net.triggerParallel(originalTrainingExample.getIn()).getOutput();
+                    error += NeuralMath.getRegularizedError(out, originalTrainingExample.getOut(), regularizationRate, net);
+                    if (NeuralMath.getPredictedLabel(out) == NeuralMath.getPredictedLabel(originalTrainingExample.getOut())) {
+                        accuracy++;
+                    }
+                }
+                error /= originalTrainingExamples.length;
+                accuracy /= originalTrainingExamples.length;
+                if(trainingProgressUpdated != null) trainingProgressUpdated.accept(new Pair<>(error, accuracy));
                 
                 //Logging
                 if(logIt == logEveryXIterations) try {
                     logIt = 0;
                     double time = (System.currentTimeMillis() - startTime) / 1000.0;
-                    byte[] out = (iteration + " " + error + " " + time + "\r\n").getBytes("UTF-8");
+                    byte[] out = (iteration + " " + error + " " + accuracy + " " + time + "\r\n").getBytes("UTF-8");
                     if(errorLoggerStream != null) errorLoggerStream.write(out);
                     System.out.write(out);
                     //Kopie speichern
@@ -113,8 +141,8 @@ public class Backpropagator {
                 
                 //Adaptive Lernrate
                 if(adaptiveLREnabled && lastError > 0.0) {
-                    if(error < lastError) learningRate *= ADAPTIVE_LEARNING_RATE_UP;
-                    else learningRate *= ADAPTIVE_LEARNING_RATE_DOWN;
+                    if(lastError > error) learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_UP_MIN, Math.min(ADAPTIVE_LEARNING_RATE_UP_MAX, lastError / error));
+                    else learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_DOWN_MIN, Math.min(ADAPTIVE_LEARNING_RATE_DOWN_MAX, lastError / error));
                     if(learningRateUpdated != null) learningRateUpdated.run();
                     System.out.println("Lernrate angepasst: " + learningRate);
                 }
@@ -122,12 +150,15 @@ public class Backpropagator {
             //Ende der Schleife
             System.out.println("Trained for " + iterations + " iterations. Error: " + error);
             this.training = false;
+            if(errorLoggerStream != null) try {
+                errorLoggerStream.close();
+            } catch (IOException ex) {
+                Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
+            }
         })).start();
         return trainThread;
     }
     
-    private double error = 0.0, lastError = -1.0;
-    private int iteration = 0;
     private TrainingExample[][] examples;
     private CyclicBarrier trainingBarrier;
     
@@ -144,11 +175,9 @@ public class Backpropagator {
         @Override
         public void run() {
             while(training) {
-                double threadError = 0.0;
                 for(TrainingExample threadExample : examples[threadId]) {
-                    threadError += backpropStep(threadExample, threadId);
+                    backpropStep(threadExample, threadId);
                 }
-                error += threadError;
                 try {
                     trainingBarrier.await();
                 } catch (InterruptedException | BrokenBarrierException ex) {
@@ -183,8 +212,11 @@ public class Backpropagator {
         net.prepareParallelBackprop(threadCount);
         examples = new TrainingExample[threadCount][examplesPerThread];
         error = 0.0;
+        accuracy = 0.0;
         lastError = -1.0;
         iteration = 0;
+        trainingSupplier.reset();
+        TrainingExample[] originalTrainingExamples = trainingSupplier.originalTrainingExamples();
         //Trainingsbeispiele laden
         for(int t = 0; t < threadCount; t++) {
             examples[t] = trainingSupplier.nextTrainingExamples(examplesPerThread);
@@ -195,14 +227,29 @@ public class Backpropagator {
             iteration++;
             //Lernen/Gewichte updaten
             Arrays.stream(net.getLayers()).forEach(l -> l.accumulate(learningRate, regularizationRate, momentum));
+            
             //Alle Beispiele angesehen
             if(iteration % fullTrainingCycle == 0) {
-                //Fehler berechnen
-                error /= fullTrainingCycle * threadCount * examplesPerThread;
+                //Forward Propagation wiederholen, um Error & Accuracy zu bestimmen
+                lastError = error;
+                error = 0.0;
+                accuracy = 0.0;
+                System.out.println("Determining error and accuracy...");
+                for(TrainingExample originalTrainingExample : originalTrainingExamples) {
+                    double[] out = net.triggerParallel(originalTrainingExample.getIn()).getOutput();
+                    error += NeuralMath.getRegularizedError(out, originalTrainingExample.getOut(), regularizationRate, net);
+                    if (NeuralMath.getPredictedLabel(out) == NeuralMath.getPredictedLabel(originalTrainingExample.getOut())) {
+                        accuracy++;
+                    }
+                }
+                error /= originalTrainingExamples.length;
+                accuracy /= originalTrainingExamples.length;
+                if(trainingProgressUpdated != null) trainingProgressUpdated.accept(new Pair<>(error, accuracy));
+                
                 //Logging
                 try {
                     double time = (System.currentTimeMillis() - startTime) / 1000.0;
-                    byte[] out = (iteration + " " + error + " " + time + "\r\n").getBytes("UTF-8");
+                    byte[] out = (iteration + " " + error + " " + accuracy + " " + time + "\r\n").getBytes("UTF-8");
                     if(errorLoggerStream != null) errorLoggerStream.write(out);
                     System.out.write(out);
                     /*if(iteration % SAVE_EVERY_X_ITERATIONS == 0) {
@@ -214,19 +261,21 @@ public class Backpropagator {
                 } catch (IOException ex) {}
                 //Adaptive Lernrate
                 if(adaptiveLREnabled && lastError > 0.0) {
-                    if(error < lastError) learningRate *= ADAPTIVE_LEARNING_RATE_UP;
-                    else learningRate *= ADAPTIVE_LEARNING_RATE_DOWN;
+                    if(lastError > error) learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_UP_MIN, Math.min(ADAPTIVE_LEARNING_RATE_UP_MAX, lastError / error));
+                    else learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_DOWN_MIN, Math.min(ADAPTIVE_LEARNING_RATE_DOWN_MAX, lastError / error));
                     if(learningRateUpdated != null) learningRateUpdated.run();
                     System.out.println("Lernrate angepasst: " + learningRate);
                 }
-                //Fehler zurücksetzen
-                lastError = error;
-                error = 0;
             }
             //Überprüfen ob Training gestoppt
             if(stopped || iteration >= iterations) {
                 System.out.println("Trainiert für " + iterations + " Iterationen.");
                 training = false;
+                if(errorLoggerStream != null) try {
+                    errorLoggerStream.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
             //Neue Trainingsbeispiele laden
             if(!staticExamples) {
@@ -254,8 +303,8 @@ public class Backpropagator {
     }
     
     /**
-     * Führt einen Backprop-Schritt aus und gibt den Fehler zurück (die Gewichte
-     * werden nicht geupdatet!).
+     * Führt einen Backprop-Schritt aus und gibt die Netzausgabe zurück (die
+     * Gewichte werden nicht geupdatet!).
      * 
      * Sollte nur für Batch Gradient Descent verwendet werden.
      *
@@ -264,7 +313,7 @@ public class Backpropagator {
      * @return
      * @see Backpropagator#backpropStepParallel(de.fk.neuralnetwork.training.TrainingExample) Für Stochastic Gradient Descent
      */
-    public double backpropStep(TrainingExample trainingExample, int threadId) {
+    public double[] backpropStep(TrainingExample trainingExample, int threadId) {
         NeuralLayer[] layers = net.getLayers();
         //Sammeln der Trainingsdaten
         double[] input = trainingExample.getIn(), expectedOutput = trainingExample.getOut();
@@ -289,12 +338,12 @@ public class Backpropagator {
             layers[i].calcAccumulatorMatrices(errorDeltas, activationsBefore, threadId);
         }
         //Fehler berechnen
-        return NeuralMath.getRegularizedError(out.getOutput(), expectedOutput, regularizationRate, net);
+        return out.getOutput();
     }
     
     /**
-     * Führt einen Backprop-Schritt aus und gibt den Fehler zurück (die Gewichte
-     * werden nicht geupdatet!) (nutzt parallele Streams).
+     * Führt einen Backprop-Schritt aus und gibt die Netzausgabe zurück (die
+     * Gewichte werden nicht geupdatet!) (nutzt parallele Streams).
      * 
      * Sollte nur für Stochastic Gradient Descent verwendet werden.
      *
@@ -302,7 +351,7 @@ public class Backpropagator {
      * @return Fehler E
      * @see Backpropagator#backpropStep(de.fk.neuralnetwork.training.TrainingExample, int) Für paralleles Lernen (Batch Gradient Descent)
      */
-    public double backpropStepParallel(TrainingExample trainingExample) {
+    public double[] backpropStepParallel(TrainingExample trainingExample) {
         NeuralLayer[] layers = net.getLayers();
         //Sammeln der Trainingsdaten
         double[] input = trainingExample.getIn(), expectedOutput = trainingExample.getOut();
@@ -327,7 +376,7 @@ public class Backpropagator {
             layers[i].calcAccumulatorMatrices(errorDeltas, activationsBefore, 0);
         }
         //Fehler berechnen
-        return NeuralMath.getRegularizedError(out.getOutput(), expectedOutput, regularizationRate, net);
+        return out.getOutput();
     }
     
 }

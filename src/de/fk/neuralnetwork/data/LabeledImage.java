@@ -10,6 +10,12 @@ import java.util.Random;
 public class LabeledImage {
     
     /**
+     * Chance, dass Transformationen auf das Bild angewendet werden.
+     *
+     */
+    public static final double GENERAL_TRANSFORMATION_CHANCE = 0.7;//70%
+    
+    /**
      * Maximale Drehung des Bildes beim Transformieren in beide Richtungen
      * (in Rad).
      *
@@ -26,13 +32,13 @@ public class LabeledImage {
      * Maximale Vergrößerung/Verkleinerung beim Transformieren.
      *
      */
-    public static final double SCALE_BOUNDS = 0.25;//+-25%
+    public static final double SCALE_BOUNDS = 0.2;//+-20%
     
     /**
      * Wahrscheinlichkeit, dass das Bild skaliert wird.
      *
      */
-    public static final double SCALE_CHANCE = 0.9;//90%
+    public static final double SCALE_CHANCE = 0.8;//80%
     
     /**
      * Maximale Verschiebung in x- und y-Richtung beim Transformieren.
@@ -44,7 +50,7 @@ public class LabeledImage {
      * Wahrscheinlichkeit, dass das Bild verschoben wird.
      *
      */
-    public static final double SHIFT_CHANCE = 1.0;//100%
+    public static final double SHIFT_CHANCE = 10.9;//90%
 
     private double[][] data;
     private int label;
@@ -95,6 +101,7 @@ public class LabeledImage {
      * @see LabeledImage#ROTATION_BOUNDS
      */
     public LabeledImage cloneAndTransform(Random r) {
+        if(r.nextDouble() >= GENERAL_TRANSFORMATION_CHANCE) return this;
         //Daten transformieren
         double[][] newData = null;
         if(r.nextDouble() < SHIFT_CHANCE)

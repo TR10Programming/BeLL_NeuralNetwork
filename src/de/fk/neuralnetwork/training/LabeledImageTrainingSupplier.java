@@ -62,4 +62,12 @@ public class LabeledImageTrainingSupplier extends TrainingSupplier {
         return examples;
     }
 
+    @Override
+    protected TrainingExample[] supplyOriginalTrainingExamples() {
+        return imageSupplier.get()
+                .parallelStream()
+                .map(li -> new TrainingExample(NeuralMath.flatten(li.getData()), NeuralMath.getOutputForLabel(li.getLabel(), classes)))
+                .toArray(TrainingExample[]::new);
+    }
+
 }

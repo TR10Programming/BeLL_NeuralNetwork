@@ -2,8 +2,6 @@ package de.fk.neuralnetwork.data;
 
 import de.fk.neuralnetwork.NeuralNetwork;
 import de.fk.neuralnetwork.math.NeuralMath;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
