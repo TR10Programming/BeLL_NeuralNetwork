@@ -47,6 +47,8 @@ public class MnistTestDialog extends javax.swing.JDialog {
         btnTest = new javax.swing.JButton();
         lblImageSet = new javax.swing.JLabel();
         lblLabelSet = new javax.swing.JLabel();
+        lblFormat = new javax.swing.JLabel();
+        cbFormat = new javax.swing.JComboBox<>();
 
         fileChooser.setCurrentDirectory(new java.io.File("D:\\Dokumente\\NetBeansProjects\\BeLL_NeuralNetwork"));
 
@@ -78,6 +80,10 @@ public class MnistTestDialog extends javax.swing.JDialog {
 
         lblLabelSet.setText("Kein Label Set ausgewählt");
 
+        lblFormat.setText("Format:");
+
+        cbFormat.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "MNIST", "EMNIST" }));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -89,13 +95,19 @@ public class MnistTestDialog extends javax.swing.JDialog {
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(btnTest))
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(btnImageSet, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(btnLabelSet, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(lblImageSet)
-                            .addComponent(lblLabelSet))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(btnImageSet, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(btnLabelSet, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(lblImageSet)
+                                    .addComponent(lblLabelSet)))
+                            .addComponent(lblFormat)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(42, 42, 42)
+                                .addComponent(cbFormat, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addGap(0, 69, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -110,7 +122,11 @@ public class MnistTestDialog extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnLabelSet)
                     .addComponent(lblLabelSet))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblFormat)
+                    .addComponent(cbFormat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(btnTest)
                 .addContainerGap())
         );
@@ -162,7 +178,7 @@ public class MnistTestDialog extends javax.swing.JDialog {
 
     private void btnTestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTestActionPerformed
         try {
-            Tester.TestResult tr = Tester.testFromMnist(imageFile, labelFile, nn, 100000);
+            Tester.TestResult tr = Tester.testFromMnist(imageFile, labelFile, nn, 100000, ImageContainer.FileFormat.values()[cbFormat.getSelectedIndex()]);
             JOptionPane.showMessageDialog(this, "Fehlerrate: " + tr.getError() + "\nAccuracy: " + tr.getAccuracy(), "Test abgeschlossen", JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Es ist ein Fehler beim Einlesen der Dateien aufgetreten.");
@@ -176,7 +192,9 @@ public class MnistTestDialog extends javax.swing.JDialog {
     private javax.swing.JButton btnImageSet;
     private javax.swing.JButton btnLabelSet;
     private javax.swing.JButton btnTest;
+    private javax.swing.JComboBox<String> cbFormat;
     private javax.swing.JFileChooser fileChooser;
+    private javax.swing.JLabel lblFormat;
     private javax.swing.JLabel lblImageSet;
     private javax.swing.JLabel lblLabelSet;
     // End of variables declaration//GEN-END:variables

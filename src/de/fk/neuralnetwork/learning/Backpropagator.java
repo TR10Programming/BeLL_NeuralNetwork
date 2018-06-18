@@ -24,9 +24,9 @@ public class Backpropagator {
     
     public static final int SAVE_EVERY_X_ITERATIONS = 10;
     public static final double ADAPTIVE_LEARNING_RATE_DOWN_MIN = 0.7,
-            ADAPTIVE_LEARNING_RATE_UP_MIN = 1.05,
+            ADAPTIVE_LEARNING_RATE_UP_MIN = 1.025,
             ADAPTIVE_LEARNING_RATE_DOWN_MAX = 0.9,
-            ADAPTIVE_LEARNING_RATE_UP_MAX = 1.2;
+            ADAPTIVE_LEARNING_RATE_UP_MAX = 1.15;
 
     private NeuralNetwork net;
     private double learningRate, regularizationRate, momentum;
@@ -98,18 +98,26 @@ public class Backpropagator {
             System.out.println("Training with " + exampleCount + " examples per iteration.");
             error = 0.0;
             startTime = System.currentTimeMillis();
+            NeuralLayer[] layers = net.getLayers();
             
             //Trainingsschleife
             for(iteration = 0; !stopped && iteration < iterations; iteration++, logIt++) {
                 
                 //Backpropagation; Alle Trainingsbeispiele ansehen
                 System.out.print("Backpropagating...");
+                /*lastError = error;
+                error = 0.0;
+                accuracy = 0.0;*/
                 for(int example = 0; example < exampleCount; example++) {
-                    double[] out = backpropStepParallel(trainingSupplier.nextTrainingExample());
+                    TrainingExample ex = trainingSupplier.nextTrainingExample();
+                    /*double[] out = */backpropStepParallel(layers, ex);
                     //Lernen/Gewichte updaten
-                    Arrays.stream(net.getLayers()).forEach(l -> l.accumulate(learningRate, regularizationRate, momentum));
+                    for(NeuralLayer l : layers) l.accumulate(learningRate, regularizationRate, momentum);
+                    //error += NeuralMath.getRegularizedError(out, ex.getOut(), regularizationRate, net);
+                    //if (NeuralMath.getPredictedLabel(out) == NeuralMath.getPredictedLabel(ex.getOut())) accuracy++;
                 }
-                
+                //error /= exampleCount;
+                //accuracy /= exampleCount;
                 //Forward Propagation wiederholen, um Error & Accuracy zu bestimmen
                 lastError = error;
                 error = 0.0;
@@ -347,12 +355,12 @@ public class Backpropagator {
      * 
      * Sollte nur für Stochastic Gradient Descent verwendet werden.
      *
+     * @param layers
      * @param trainingExample
      * @return Fehler E
      * @see Backpropagator#backpropStep(de.fk.neuralnetwork.training.TrainingExample, int) Für paralleles Lernen (Batch Gradient Descent)
      */
-    public double[] backpropStepParallel(TrainingExample trainingExample) {
-        NeuralLayer[] layers = net.getLayers();
+    public double[] backpropStepParallel(NeuralLayer[] layers, TrainingExample trainingExample) {
         //Sammeln der Trainingsdaten
         double[] input = trainingExample.getIn(), expectedOutput = trainingExample.getOut();
         //Aktivierungen berechnen

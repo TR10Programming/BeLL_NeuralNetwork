@@ -55,7 +55,7 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
         miShowAll = new javax.swing.JMenuItem();
         miShowIncorrect = new javax.swing.JMenuItem();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Trainingsbeispiele");
 
         toolBar.setFloatable(false);

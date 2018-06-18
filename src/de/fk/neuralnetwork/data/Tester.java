@@ -58,11 +58,12 @@ public class Tester {
      * @param labelFile MNIST Label File
      * @param nn Zu testendes neuronales Netz
      * @param maxImages Maximale Anzahl einzulesender Bilder
+     * @param fileFormat
      * @return Testergebnis mit Accuracy und Fehlerrate
      * @throws IOException Lesefehler
      * @see TestResult
      */
-    public static TestResult testFromMnist(String imageFile, String labelFile, NeuralNetwork nn, int maxImages) throws IOException {
+    public static TestResult testFromMnist(String imageFile, String labelFile, NeuralNetwork nn, int maxImages, ImageContainer.FileFormat fileFormat) throws IOException {
         double error = 0, accuracy = 0;
         
         ArrayList<LabeledImage> images = new ArrayList<>();
@@ -84,10 +85,20 @@ public class Tester {
         if(numImg != numLabels)
             throw new IOException("Die beiden Dateien passen nicht zusammen: " + imageFile + " enthält " + numImg + " Bilder, aber " + labelFile + " enthält " + numLabels + " Labels.");
         //Bilder und Labels einlesen & zusammenfügen
+        
         for(int i = 0; i < numImg; i++) {
             double[] flatData = new double[numRows * numCols];
-            for(int j = 0; j < imgSize; j++)
-                    flatData[j] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
+            switch(fileFormat) {
+                case MNIST:
+                    for(int j = 0; j < imgSize; j++)
+                        flatData[j] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
+                    break;
+                case EMNIST:
+                    for(int c = 0; c < numCols; c++)
+                        for(int r = 0; r < numRows; r++)
+                            flatData[r * numCols + c] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
+                    break;
+            }
             int label = labelBytes.get() & 0xFF; //unsigned
             double[] out = nn.trigger(flatData).getOutput();
             error += NeuralMath.getError(out, NeuralMath.getOutputForLabel(label, nn.getOutputLayer().getNeurons().length));

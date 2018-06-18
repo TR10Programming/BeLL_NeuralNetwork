@@ -32,6 +32,10 @@ public class ImageContainer {
 
     private static ArrayList<LabeledImage> images = new ArrayList<>();
     
+    public enum FileFormat {
+        MNIST, EMNIST;
+    }
+    
     /**
      * Entfernt alle geladenen Bilder aus dem Speicher.
      */
@@ -80,7 +84,7 @@ public class ImageContainer {
      * @param maxImages Anzahl an maximal einzulesenden Bildern
      * @throws IOException Lesefehler
      */
-    public static void readFromMnist(String imageFile, String labelFile, int maxImages) throws IOException {
+    public static void readFromMnist(String imageFile, String labelFile, int maxImages, FileFormat fileFormat) throws IOException {
         //ImageFile einlesen und überprüfen
         ByteBuffer imageBytes = ByteBuffer.wrap(Files.readAllBytes(Paths.get(imageFile)));
         int magicNumber = imageBytes.getInt();
@@ -98,13 +102,29 @@ public class ImageContainer {
         if(numImg != numLabels)
             throw new IOException("Die beiden Dateien passen nicht zusammen: " + imageFile + " enthält " + numImg + " Bilder, aber " + labelFile + " enthält " + numLabels + " Labels.");
         //Bilder und Labels einlesen & zusammenfügen
-        for(int i = 0; i < numImg; i++) {
-            double[][] data = new double[numRows][numCols];
-            for(int r = 0; r < numRows; r++)
-                for(int c = 0; c < numCols; c++)
-                    data[r][c] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
-            int label = labelBytes.get() & 0xFF; //unsigned
-            images.add(new LabeledImage(data, label));
+        switch(fileFormat) {
+            case MNIST:
+                for(int i = 0; i < numImg; i++) {
+                    double[][] data = new double[numRows][numCols];
+                    for(int r = 0; r < numRows; r++)
+                        for(int c = 0; c < numCols; c++)
+                            data[r][c] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
+                    int label = labelBytes.get() & 0xFF; //unsigned
+                    images.add(new LabeledImage(data, label));
+                }
+                break;
+            case EMNIST:
+                for(int i = 0; i < numImg; i++) {
+                    double[][] data = new double[numRows][numCols];
+                    for(int c = 0; c < numCols; c++)
+                        for(int r = 0; r < numRows; r++)
+                            data[r][c] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
+                    int label = labelBytes.get() & 0xFF; //unsigned
+                    images.add(new LabeledImage(data, label));
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Ungültiges Dateiformat");
         }
     }
     

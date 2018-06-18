@@ -30,7 +30,7 @@ public class Main {
     
     public static void mnistProblem() {
         try {
-            ImageContainer.readFromMnist("train-images.idx3-ubyte", "train-labels.idx1-ubyte", 100);
+            ImageContainer.readFromMnist("train-images.idx3-ubyte", "train-labels.idx1-ubyte", 100, ImageContainer.FileFormat.MNIST);
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -48,7 +48,7 @@ public class Main {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
         try {
-            Tester.testFromMnist("t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte", nn, 10000);
+            Tester.testFromMnist("t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte", nn, 10000, ImageContainer.FileFormat.MNIST);
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -56,7 +56,7 @@ public class Main {
             bp.trainParallel(trainingSupplier, 100, fos, 1, 100, true);
             //TODO Warten
             try {
-                Tester.testFromMnist("t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte", nn, 10000);
+                Tester.testFromMnist("t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte", nn, 10000, ImageContainer.FileFormat.MNIST);
             } catch (IOException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }

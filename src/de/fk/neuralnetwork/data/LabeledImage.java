@@ -10,7 +10,7 @@ import java.util.Random;
 public class LabeledImage {
     
     /**
-     * Chance, dass Transformationen auf das Bild angewendet werden.
+     * Chance, dass Transformationen auf das Bild angewandt werden.
      *
      */
     public static final double GENERAL_TRANSFORMATION_CHANCE = 0.7;//70%
@@ -50,7 +50,7 @@ public class LabeledImage {
      * Wahrscheinlichkeit, dass das Bild verschoben wird.
      *
      */
-    public static final double SHIFT_CHANCE = 10.9;//90%
+    public static final double SHIFT_CHANCE = 0.9;//90%
 
     private double[][] data;
     private int label;

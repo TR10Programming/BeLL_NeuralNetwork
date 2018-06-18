@@ -62,9 +62,10 @@ public class TrainingExampleDisplayPanel extends JPanel {
                     g.fillRect(x + col * IMAGE_SCALE, y + row * IMAGE_SCALE, IMAGE_SCALE, IMAGE_SCALE);
                 }
             }
-            //Label
+            //Label & Kästchen
             g.setColor(Color.BLACK);
-            g.drawString("[" + cimg.getLabel() + "]", x + cx / 2 - 6, y + cy - 6);
+            g.drawRect(x, y, IMAGE_SCALE * cdata.length, IMAGE_SCALE * cdata[0].length);
+            g.drawString("[" + cimg.getLabel() + "]", x + cx / 2 - 10, y + cy - 10);
             x += cx; //nach rechts bewegen
             if(maxHeight < cy) maxHeight = cy; //maxHeight updaten
         }
