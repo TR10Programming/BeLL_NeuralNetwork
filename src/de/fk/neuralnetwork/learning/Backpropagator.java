@@ -90,6 +90,7 @@ public class Backpropagator {
         (trainThread = new Thread(() -> {
         
             int exampleCount = trainingSupplier.getExampleCount(), logIt = logEveryXIterations;
+            int example;
             long startTime = System.currentTimeMillis();
             trainingSupplier.reset();
             TrainingExample[] originalTrainingExamples = trainingSupplier.originalTrainingExamples();
@@ -97,7 +98,6 @@ public class Backpropagator {
             net.prepareParallelBackprop(1);
             System.out.println("Training with " + exampleCount + " examples per iteration.");
             error = 0.0;
-            startTime = System.currentTimeMillis();
             NeuralLayer[] layers = net.getLayers();
             
             //Trainingsschleife
@@ -105,16 +105,12 @@ public class Backpropagator {
                 
                 //Backpropagation; Alle Trainingsbeispiele ansehen
                 System.out.print("Backpropagating...");
-                /*lastError = error;
-                error = 0.0;
-                accuracy = 0.0;*/
-                for(int example = 0; example < exampleCount; example++) {
+                for(example = 0; example < exampleCount; example++) {
                     TrainingExample ex = trainingSupplier.nextTrainingExample();
-                    /*double[] out = */backpropStepParallel(layers, ex);
+                    backpropStepParallel(layers, ex);
                     //Lernen/Gewichte updaten
                     for(NeuralLayer l : layers) l.accumulate(learningRate, regularizationRate, momentum);
-                    //error += NeuralMath.getRegularizedError(out, ex.getOut(), regularizationRate, net);
-                    //if (NeuralMath.getPredictedLabel(out) == NeuralMath.getPredictedLabel(ex.getOut())) accuracy++;
+                    if(stopped) break;
                 }
                 //error /= exampleCount;
                 //accuracy /= exampleCount;
@@ -138,7 +134,7 @@ public class Backpropagator {
                 if(logIt == logEveryXIterations) try {
                     logIt = 0;
                     double time = (System.currentTimeMillis() - startTime) / 1000.0;
-                    byte[] out = (iteration + " " + error + " " + accuracy + " " + time + "\r\n").getBytes("UTF-8");
+                    byte[] out = ((iteration + 1) + " " + error + " " + accuracy + " " + time + "\r\n").getBytes("UTF-8");
                     if(errorLoggerStream != null) errorLoggerStream.write(out);
                     System.out.write(out);
                     //Kopie speichern
@@ -154,6 +150,7 @@ public class Backpropagator {
                     if(learningRateUpdated != null) learningRateUpdated.run();
                     System.out.println("Lernrate angepasst: " + learningRate);
                 }
+                if(stopped) break;
             }
             //Ende der Schleife
             System.out.println("Trained for " + iterations + " iterations. Error: " + error);
@@ -164,6 +161,10 @@ public class Backpropagator {
                 Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
             }
         })).start();
+        trainThread.setUncaughtExceptionHandler((Thread t, Throwable e) -> {
+            e.printStackTrace();
+            training = false;
+        });
         return trainThread;
     }
     

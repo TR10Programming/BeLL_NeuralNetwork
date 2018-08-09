@@ -1,8 +1,6 @@
 package de.fk.neuralnetwork.io;
 
 import de.fk.neuralnetwork.BasicNeuron;
-import de.fk.neuralnetwork.BiasNeuron;
-import de.fk.neuralnetwork.NeuralLayer;
 import de.fk.neuralnetwork.NeuralNetwork;
 import de.fk.neuralnetwork.Neuron;
 import java.io.BufferedReader;
@@ -25,7 +23,6 @@ public class JSExport {
             JSONArray weights = new JSONArray();
             int in = net.getInputNeurons(), out = net.getOutputLayer().getNeurons().length;
             Stream.of(net.getLayers())
-                    .parallel()
                     .map(layer -> {
                         JSONArray jlayer = new JSONArray();
                         for(Neuron neuron : layer.getNeurons())

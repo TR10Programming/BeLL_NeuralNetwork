@@ -119,7 +119,7 @@ public class ImageContainer {
                     for(int c = 0; c < numCols; c++)
                         for(int r = 0; r < numRows; r++)
                             data[r][c] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
-                    int label = labelBytes.get() & 0xFF; //unsigned
+                    int label = (labelBytes.get() & 0xFF) - 1; //unsigned
                     images.add(new LabeledImage(data, label));
                 }
                 break;

@@ -9,6 +9,7 @@ import java.util.Random;
 import static java.lang.Math.log;
 import java.util.Arrays;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  *
@@ -46,6 +47,21 @@ public class NeuralMath {
      */
     public static double[] generateRandomWeights(int length) {
         return rdm.doubles(length, -0.5, 0.5).toArray();
+    }
+    
+    /**
+     * Gibt einen zweidimensionalen Array mit den spezifizierten Dimensionen
+     * zurück, der zufällige Gewichte im Intervall [-0.5;0.5) enthält.
+     *
+     * @param length1 Länge der ersten Arraydimension
+     * @param length2 Länge der zweiten Arraydimension
+     * @return Zufällige Gewichte
+     */
+    public static double[][] generateRandomWeights(int length1, int length2) {
+        return IntStream.range(0, length1)
+                .parallel()
+                .mapToObj(i -> rdm.doubles(length2, -0.5, 0.5).toArray())
+                .toArray(double[][]::new);
     }
     
     /**
@@ -196,6 +212,132 @@ public class NeuralMath {
      */
     public static double[][] deepCopy(double[][] matrix) {
         return Arrays.stream(matrix).map(el -> el.clone()).toArray(double[][]::new);
+    }
+    
+    /**
+     * Führt eine Matrixmultiplikation mit einer Matrix und einem Vektor aus.
+     * Dabei wird jede Zeile der Matrix mit den Elementen des Vektors
+     * multipliziert und aufsummiert. Es entsteht ein Vektor mit der Länge der
+     * Anzahl der Zeilen in der Ausgangsmatrix.
+     *
+     * @param mat
+     * @param vec
+     * @return Eingabevektor
+     */
+    public static double[] matmul(double[][] mat, double[] vec) {
+        return Arrays.stream(mat)
+                .mapToDouble(row -> 
+                        IntStream.range(0, row.length)
+                                .mapToDouble(col -> row[col] * vec[col])
+                                .sum()
+                ).toArray();
+    }
+    
+    /**
+     * Führt eine parallele Matrixmultiplikation mit einer Matrix und einem
+     * Vektor aus. Dabei wird jede Zeile der Matrix mit den Elementen des
+     * Vektors multipliziert und aufsummiert. Es entsteht ein Vektor mit der
+     * Länge der Anzahl der Zeilen in der Ausgangsmatrix.
+     *
+     * @param mat
+     * @param vec
+     * @return Eingabevektor
+     */
+    public static double[] matmulParallel(double[][] mat, double[] vec) {
+        return Arrays.stream(mat).parallel().mapToDouble(row -> 
+                        IntStream.range(0, row.length)
+                                .mapToDouble(col -> row[col] * vec[col])
+                                .sum()
+                ).toArray();
+    }
+    
+    /**
+     * Multipliziert die Gewichtsmatrix mit dem Eingabevektor und addiert den
+     * Biasvektor. Zurückgegeben wird ein Vektor mit den Neuroneneingaben.
+     *
+     * @param weights
+     * @param in
+     * @param biases
+     * @return Eingabevektor
+     */
+    public static double[] applyWeights(double[][] weights, double[] in, double[] biases) {
+        return IntStream.range(0, weights[0].length)
+                .mapToDouble(col ->
+                        IntStream.range(0, weights.length)
+                                .mapToDouble(row -> weights[row][col] * in[row])
+                                .sum() + biases[col]
+                ).toArray();
+    }
+    
+    /**
+     * Multipliziert die Gewichtsmatrix mit dem Eingabevektor und addiert den
+     * Biasvektor. Nutzt parallele Streams. Zurückgegeben wird ein Vektor mit
+     * den Neuroneneingaben.
+     *
+     * @param weights
+     * @param in
+     * @param biases
+     * @return Eingabevektor
+     */
+    public static double[] applyWeightsParallel(double[][] weights, double[] in, double[] biases) {
+        return IntStream.range(0, biases.length)
+                .parallel()
+                .mapToDouble(col ->
+                        IntStream.range(0, weights.length)
+                                .mapToDouble(row -> weights[row][col] * in[row])
+                                .sum() + biases[col]
+                ).toArray();
+    }
+    
+    /**
+     * Multipliziert die Gewichtsmatrix mit dem Eingabevektor, addiert den
+     * Biasvektor und wendet die Aktivierungsfunktion an. Vektorwertige
+     * Aktivierungsfunktionen wie Softmax dürfen nicht übergeben werden. Nutzt
+     * parallele Streams. Zurückgegeben wird ein Vektor mit den Aktivierungen.
+     *
+     * @param weights
+     * @param in
+     * @param biases
+     * @param act
+     * @return Eingabevektor
+     */
+    public static double[] applyWeightsAndActivationFunctionParallel(double[][] weights, double[] in, double[] biases, ActivationFunction act) {
+        return IntStream.range(0, biases.length)
+                .parallel()
+                .mapToDouble(col ->
+                        act.apply(
+                                IntStream.range(0, weights.length)
+                                        .mapToDouble(row -> weights[row][col] * in[row])
+                                        .sum() + biases[col]
+                        )
+                ).toArray();
+    }
+    
+    /**
+     * Gibt das Skalarprodukt der beiden Vektoren zurück. x^T*y bzw. (x) x (y)
+     *
+     * @param x
+     * @param y
+     * @return
+     */
+    public static double[] vecmul(double[] x, double[] y) {
+        return IntStream.range(0, x.length)
+                .mapToDouble(i -> x[i] * y[i])
+                .toArray();
+    }
+    
+    /**
+     * Gibt das Skalarprodukt der beiden Vektoren zurück. x^T*y bzw. (x) x (y).
+     * Nutzt bei ausreichender Vektorgröße parallele Streams.
+     *
+     * @param x
+     * @param y
+     * @return
+     */
+    public static double[] vecmulParallel(double[] x, double[] y) {
+        IntStream stream = IntStream.range(0, x.length);
+        if(x.length > 79) stream = stream.parallel();
+        return stream.mapToDouble(i -> x[i] * y[i]).toArray();
     }
     
 }

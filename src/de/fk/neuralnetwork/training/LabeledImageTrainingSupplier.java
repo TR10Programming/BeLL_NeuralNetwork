@@ -2,7 +2,6 @@ package de.fk.neuralnetwork.training;
 
 import de.fk.neuralnetwork.data.LabeledImage;
 import de.fk.neuralnetwork.math.NeuralMath;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;

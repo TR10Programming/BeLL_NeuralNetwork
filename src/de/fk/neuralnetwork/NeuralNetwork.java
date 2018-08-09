@@ -22,51 +22,6 @@ public class NeuralNetwork implements Serializable {
     }
     
     /**
-     * Generiert ein neuronales Netz mit der gegebenen Anzahl an Layern und
-     * Neuronen pro Layer (für alle Layer gleich). Alle Layer außer dem Output
-     * Layer erhalten zusätzlich einen Bias.
-     *
-     * @param layerCount
-     * @param neuronsPerLayer
-     */
-    public NeuralNetwork(int layerCount, int neuronsPerLayer) {
-        layers = new NeuralLayer[layerCount];
-        inputBias = true;
-        //First Hidden Layer
-        layers[0] = new NeuralLayer(inputNeurons + 1, neuronsPerLayer, true);
-        //Other Hidden Layers
-        for(int i = 1; i < layerCount - 1; i++) layers[i] = new NeuralLayer(neuronsPerLayer + 1, neuronsPerLayer, true);
-        //Output Layer
-        layers[layerCount - 1] = new NeuralLayer(neuronsPerLayer + 1, neuronsPerLayer, false);
-        layers[layerCount - 1].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
-        this.inputNeurons = neuronsPerLayer;
-    }
-    
-    /**
-     * Generiert ein neuronales Netz mit einem Input Layer, der übergebenen Anzahl
-     * an Hidden Layer und einem Output Layer mit der übergebenen Anzahl an Neuronen
-     * pro Hidden, Input und Output Layer. Alle Layer außer dem Output Layer
-     * erhalten zusätzlich einen Bias.
-     *
-     * @param hiddenLayersCount
-     * @param neuronsPerHiddenLayer
-     * @param inputNeurons
-     * @param outputNeurons
-     */
-    public NeuralNetwork(int hiddenLayersCount, int neuronsPerHiddenLayer, int inputNeurons, int outputNeurons) {
-        layers = new NeuralLayer[hiddenLayersCount + 1];
-        inputBias = true;
-        //First Hidden Layer
-        layers[0] = new NeuralLayer(inputNeurons + 1, neuronsPerHiddenLayer, true);
-        //Other Hidden Layers
-        for(int i = 1; i < hiddenLayersCount; i++) layers[i] = new NeuralLayer(neuronsPerHiddenLayer + 1, neuronsPerHiddenLayer, true);
-        //Output Layer
-        layers[hiddenLayersCount] = new NeuralLayer(neuronsPerHiddenLayer + 1, outputNeurons, false);
-        layers[hiddenLayersCount].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
-        this.inputNeurons = inputNeurons;
-    }
-    
-    /**
      * Generiert ein neuronales Netz mit den übergebenen Anzahlen an Neuronen.
      * Aller Layer außer dem Output Layer erhalten zusätzlich einen Bias.
      *

@@ -6,6 +6,8 @@ import de.fk.neuralnetwork.learning.Backpropagator;
 import de.fk.neuralnetwork.training.ArrayTrainingSupplier;
 import de.fk.neuralnetwork.training.LabeledImageTrainingSupplier;
 import de.fk.neuralnetwork.training.TrainingExample;
+import de.fk.neuralnetwork.NeuralNetwork;
+import gui.MainFrame;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,9 +37,9 @@ public class Main {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
         //for(int i = 0; i < 10; i++) System.out.println(ImageContainer.getImages().get(i).toString());
-        NeuralNetwork nn = new NeuralNetwork(1, 300, 28*28, 10);
+        NeuralNetwork nn = new NeuralNetwork(784, 10, 300);
         
-        LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer::getImages, 28, 28, 10);
+        LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer::getImages, 28, 28, MainFrame.NUM_CLASSES);
         
         Backpropagator bp = new Backpropagator(nn, 0.03, 0, 0);
         FileOutputStream fos = null;

@@ -43,9 +43,9 @@ public class Tester {
      */
     public static HashMap<LabeledImage, Double> findIncorrectlyClassified(NeuralNetwork nn, List<LabeledImage> imgs) {
         return imgs.parallelStream()
-                .map(img -> new Pair<>(img, nn.trigger(NeuralMath.flatten(img.getData())).getOutput()))
-                .filter(p -> NeuralMath.getPredictedLabel(p.getValue()) != p.getKey().getLabel())
-                .map(p -> new Pair<>(p.getKey(), NeuralMath.getError(p.getValue(), NeuralMath.getOutputForLabel(p.getKey().getLabel(), p.getValue().length))))
+                .map(img -> new Pair<>(img, nn.trigger(NeuralMath.flatten(img.getData()))))
+                .filter(p -> NeuralMath.getPredictedLabel(p.getValue().getOutput()) != p.getKey().getLabel())
+                .map(p -> new Pair<>(p.getKey(), NeuralMath.getError(p.getValue().getOutput(), NeuralMath.getOutputForLabel(p.getKey().getLabel(), p.getValue().getOutput().length))))
                 .sorted((o1, o2) -> Double.compare(o2.getValue(), o1.getValue()))
                 .collect(Collectors.toMap(Pair::getKey, Pair::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
@@ -99,8 +99,8 @@ public class Tester {
                             flatData[r * numCols + c] = (imageBytes.get() & 0xFF) / 255.0; //unsigned
                     break;
             }
-            int label = labelBytes.get() & 0xFF; //unsigned
-            double[] out = nn.trigger(flatData).getOutput();
+            int label = (labelBytes.get() & 0xFF); //unsigned
+            double[] out = nn.triggerParallel(flatData).getOutput();
             error += NeuralMath.getError(out, NeuralMath.getOutputForLabel(label, nn.getOutputLayer().getNeurons().length));
             accuracy += (NeuralMath.getPredictedLabel(out) == label) ? 1.0 : 0.0;
             //System.out.println("Predicted: " + NeuralMath.getPredictedLabel(out) + " Actual: " + label);

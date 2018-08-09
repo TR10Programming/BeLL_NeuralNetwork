@@ -28,6 +28,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author Felix
  */
 public class MainFrame extends javax.swing.JFrame {
+    
+    public static final int NUM_CLASSES = 10;
 
     private TrainingExamplesFrame teframe = null;
     private DrawFrame dframe = null;
@@ -55,8 +57,9 @@ public class MainFrame extends javax.swing.JFrame {
     
     private void createNeuralNet() {
         if(bp != null) bp.stopTraining();
-        nn = new NeuralNetwork(1, 150, 28*28, 10);
-        //nn = new NeuralNetwork(28 * 28, 10, new int[]{300, 100});
+        //nn = new NeuralNetwork(1, 150, 28*28, 10);
+        //nn = new NeuralNetwork(784, 300, 100, NUM_CLASSES);
+        nn = new NeuralNetwork(784, NUM_CLASSES, 600);
         if(bp != null) bp.setNet(nn);
     }
     
@@ -105,6 +108,9 @@ public class MainFrame extends javax.swing.JFrame {
         lblLearningRate = new javax.swing.JLabel();
         cbAdaptiveLearningRate = new javax.swing.JCheckBox();
         cbStochasticGradientDescent = new javax.swing.JCheckBox();
+        cbAutoEndTraining = new javax.swing.JCheckBox();
+        spTrainingIterations = new javax.swing.JSpinner();
+        lblAutoEndTraining = new javax.swing.JLabel();
         panelActions = new javax.swing.JPanel();
         btnTrain = new javax.swing.JButton();
         btnStopTraining = new javax.swing.JButton();
@@ -119,6 +125,8 @@ public class MainFrame extends javax.swing.JFrame {
         panelNetwork = new javax.swing.JPanel();
         lblNeuronsLbl = new javax.swing.JLabel();
         lblNeurons = new javax.swing.JLabel();
+        toolBar = new javax.swing.JToolBar();
+        progressBar = new javax.swing.JProgressBar();
         menuBar = new javax.swing.JMenuBar();
         mbNetwork = new javax.swing.JMenu();
         miOpen = new javax.swing.JMenuItem();
@@ -208,6 +216,12 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
+        cbAutoEndTraining.setText("Training nach ");
+
+        spTrainingIterations.setModel(new javax.swing.SpinnerNumberModel(10, 1, null, 1));
+
+        lblAutoEndTraining.setText("Iterationen automatisch beenden");
+
         javax.swing.GroupLayout panelTrainingLayout = new javax.swing.GroupLayout(panelTraining);
         panelTraining.setLayout(panelTrainingLayout);
         panelTrainingLayout.setHorizontalGroup(
@@ -215,37 +229,46 @@ public class MainFrame extends javax.swing.JFrame {
             .addGroup(panelTrainingLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(slThreadCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(panelTrainingLayout.createSequentialGroup()
-                        .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(tfLearningRate, javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(lblBatchSize, javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(spBatchSize, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE))
+                        .addComponent(cbAutoEndTraining)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(spTrainingIterations, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(lblAutoEndTraining)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(panelTrainingLayout.createSequentialGroup()
                         .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(slThreadCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addGroup(panelTrainingLayout.createSequentialGroup()
-                                .addGap(46, 46, 46)
+                                .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(tfLearningRate, javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(lblBatchSize, javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(spBatchSize, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(spExamplesPerThread, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(lblExamplesPerThread))
-                                .addGap(0, 0, Short.MAX_VALUE))
+                                    .addGroup(panelTrainingLayout.createSequentialGroup()
+                                        .addGap(46, 46, 46)
+                                        .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(spExamplesPerThread, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(lblExamplesPerThread))
+                                        .addGap(0, 0, Short.MAX_VALUE))
+                                    .addGroup(panelTrainingLayout.createSequentialGroup()
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(btnUpdateLearningRate)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(lblLearningRate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                             .addGroup(panelTrainingLayout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnUpdateLearningRate)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(lblLearningRate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                    .addGroup(panelTrainingLayout.createSequentialGroup()
-                        .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(cbStochasticGradientDescent)
-                            .addComponent(cbAdaptiveLearningRate)
-                            .addComponent(lblThreadCount)
-                            .addComponent(lblLearningRateLabel))
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
+                                .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(cbStochasticGradientDescent)
+                                    .addComponent(cbAdaptiveLearningRate)
+                                    .addComponent(lblThreadCount)
+                                    .addComponent(lblLearningRateLabel))
+                                .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(14, 14, 14))))
         );
         panelTrainingLayout.setVerticalGroup(
             panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelTrainingLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(panelTrainingLayout.createSequentialGroup()
+                .addContainerGap()
                 .addComponent(cbStochasticGradientDescent)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblThreadCount)
@@ -267,7 +290,13 @@ public class MainFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(spBatchSize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(spExamplesPerThread, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(spExamplesPerThread, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(cbAutoEndTraining)
+                    .addComponent(spTrainingIterations, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblAutoEndTraining))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         panelActions.setBorder(javax.swing.BorderFactory.createTitledBorder("Aktionen"));
@@ -403,6 +432,10 @@ public class MainFrame extends javax.swing.JFrame {
                 .addGap(0, 11, Short.MAX_VALUE))
         );
 
+        toolBar.setFloatable(false);
+        toolBar.setRollover(true);
+        toolBar.add(progressBar);
+
         mbNetwork.setText("Netz");
 
         miOpen.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
@@ -487,6 +520,7 @@ public class MainFrame extends javax.swing.JFrame {
                     .addComponent(panelLogging, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(panelNetwork, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
+            .addComponent(toolBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -497,11 +531,12 @@ public class MainFrame extends javax.swing.JFrame {
                     .addComponent(panelDisplay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(panelNetwork, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(panelTraining, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panelTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(panelLogging, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(24, 24, 24))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(toolBar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         pack();
@@ -513,7 +548,7 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_miTrainingExamplesActionPerformed
 
     private void btnTrainActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTrainActionPerformed
-        LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer::getImages, 28, 28, 10);
+        LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer::getImages, 28, 28, NUM_CLASSES);
         
         FileOutputStream fos = null;
         if(cbEnableLogging.isSelected()) try {
@@ -524,8 +559,8 @@ public class MainFrame extends javax.swing.JFrame {
         }
         bp.setNet(nn);
         //bp.train(trainingSupplier, 500, fos, 1);
-        if(stochasticGD) bp.train(trainingSupplier, Integer.MAX_VALUE, fos, 1);
-        else bp.trainParallel(trainingSupplier, Integer.MAX_VALUE, fos, threadCount, batchSize / threadCount, false);
+        if(stochasticGD) bp.train(trainingSupplier, cbAutoEndTraining.isSelected() ? (int) spTrainingIterations.getValue() : Integer.MAX_VALUE, fos, 1);
+        else bp.trainParallel(trainingSupplier, cbAutoEndTraining.isSelected() ? (int) spTrainingIterations.getValue() : Integer.MAX_VALUE, fos, threadCount, batchSize / threadCount, false);
     }//GEN-LAST:event_btnTrainActionPerformed
 
     private void btnStopTrainingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStopTrainingActionPerformed
@@ -674,10 +709,12 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnTrain;
     private javax.swing.JButton btnUpdateLearningRate;
     private javax.swing.JCheckBox cbAdaptiveLearningRate;
+    private javax.swing.JCheckBox cbAutoEndTraining;
     private javax.swing.JCheckBox cbEnableLogging;
     private javax.swing.JCheckBox cbStochasticGradientDescent;
     private javax.swing.JLabel lblAccuracy;
     private javax.swing.JLabel lblAccuracyLbl;
+    private javax.swing.JLabel lblAutoEndTraining;
     private javax.swing.JLabel lblBatchSize;
     private javax.swing.JLabel lblError;
     private javax.swing.JLabel lblErrorLbl;
@@ -703,11 +740,14 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JPanel panelLogging;
     private javax.swing.JPanel panelNetwork;
     private javax.swing.JPanel panelTraining;
+    private javax.swing.JProgressBar progressBar;
     private javax.swing.JFileChooser saveFileChooser;
     private javax.swing.JSlider slThreadCount;
     private javax.swing.JSpinner spBatchSize;
     private javax.swing.JSpinner spExamplesPerThread;
+    private javax.swing.JSpinner spTrainingIterations;
     private javax.swing.JTextField tfLearningRate;
     private javax.swing.JTextField tfLogFile;
+    private javax.swing.JToolBar toolBar;
     // End of variables declaration//GEN-END:variables
 }
