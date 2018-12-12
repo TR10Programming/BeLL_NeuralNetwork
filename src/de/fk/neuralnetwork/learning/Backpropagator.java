@@ -4,6 +4,8 @@ import de.fk.neuralnetwork.NeuralLayer;
 import de.fk.neuralnetwork.training.TrainingSupplier;
 import de.fk.neuralnetwork.NeuralNetwork;
 import de.fk.neuralnetwork.NeuralNetworkState;
+import de.fk.neuralnetwork.data.ImageContainer;
+import de.fk.neuralnetwork.data.Tester;
 import de.fk.neuralnetwork.math.NeuralMath;
 import de.fk.neuralnetwork.training.TrainingExample;
 import java.io.IOException;
@@ -23,18 +25,25 @@ import javafx.util.Pair;
 public class Backpropagator {
     
     public static final int SAVE_EVERY_X_ITERATIONS = 10;
-    public static final double ADAPTIVE_LEARNING_RATE_DOWN_MIN = 0.7,
+    /*public static final double ADAPTIVE_LEARNING_RATE_DOWN_MIN = 0.7,
             ADAPTIVE_LEARNING_RATE_UP_MIN = 1.025,
             ADAPTIVE_LEARNING_RATE_DOWN_MAX = 0.9,
-            ADAPTIVE_LEARNING_RATE_UP_MAX = 1.15;
+            ADAPTIVE_LEARNING_RATE_UP_MAX = 1.15;*/
+    public static final double ADAPTIVE_LEARNING_RATE_DOWN_MIN = 0.995,
+            ADAPTIVE_LEARNING_RATE_UP_MIN = 0.995,
+            ADAPTIVE_LEARNING_RATE_DOWN_MAX = 0.995,
+            ADAPTIVE_LEARNING_RATE_UP_MAX = 0.995;
 
+    private int id;
     private NeuralNetwork net;
     private double learningRate, regularizationRate, momentum;
-    private boolean stopped, training, adaptiveLREnabled;
+    private boolean stopped, training, adaptiveLREnabled, calcVaccuracy;
+    private OutputStream debugStream = System.out, logStream = null;
     private Runnable learningRateUpdated = null;
     private Consumer<Pair<Double, Double>> trainingProgressUpdated = null;
     
-    public Backpropagator(NeuralNetwork net, double learningRate, double regularizationRate, double momentum) {
+    public Backpropagator(int id, NeuralNetwork net, double learningRate, double regularizationRate, double momentum) {
+        this.id = id;
         this.net = net;
         this.learningRate = learningRate;
         this.regularizationRate = regularizationRate;
@@ -42,6 +51,7 @@ public class Backpropagator {
         this.stopped = false;
         this.training = false;
         this.adaptiveLREnabled = true;
+        this.calcVaccuracy = false;
     }
 
     public void setLearningRate(double learningRate) {
@@ -56,110 +66,129 @@ public class Backpropagator {
         this.net = net;
     }
 
-    public void setLearningRateUpdated(Runnable learningRateUpdated) {
-        this.learningRateUpdated = learningRateUpdated;
-    }
-
     public void setAdaptiveLearningRateEnabled(boolean adaptiveLREnabled) {
         this.adaptiveLREnabled = adaptiveLREnabled;
+    }
+
+    public void setCalcVaccuracy(boolean calcVaccuracy) {
+        this.calcVaccuracy = calcVaccuracy;
+    }
+
+    public boolean isCalcVaccuracy() {
+        return calcVaccuracy;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setDebugStream(OutputStream debugStream) {
+        this.debugStream = debugStream;
+    }
+
+    public void setLogStream(OutputStream logStream) {
+        this.logStream = logStream;
+    }
+
+    public void setLearningRateUpdated(Runnable learningRateUpdated) {
+        this.learningRateUpdated = learningRateUpdated;
     }
 
     public void setTrainingProgressUpdated(Consumer<Pair<Double, Double>> trainingProgressUpdated) {
         this.trainingProgressUpdated = trainingProgressUpdated;
     }
     
-    private double error = 0.0, lastError = -1.0, accuracy = 0.0;
-    private int iteration = 0;
+    private void debug(String msg) {
+        if(debugStream != null) try {
+            debugStream.write(("[BP#" + id + "] " + msg + "\n").getBytes("UTF-8"));
+        } catch (IOException ex) {
+            Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     
-    /**
-     * Startet den Trainingsvorgang.
-     *
-     * @param trainingSupplier TrainingSupplier mit Trainingsbeispielen
-     * @param iterations Wiederholungen aller Trainingsbeispiele
-     * @param errorLoggerStream OutputStream auf dem Iteration und Fehlerrate durch Leerzeichen separiert zeilenweise ausgegeben werden
-     * @param logEveryXIterations Bestimmt, aller wie vieler Iterationen eine Ausgabe erfolgen soll
-     * @return Trainingsthread
-     * @throws IllegalStateException Wenn bereits ein Trainingsthread läuft
-     * @see Backpropagator#stopTraining() 
-     */
-    public Thread train(TrainingSupplier trainingSupplier, int iterations, OutputStream errorLoggerStream, int logEveryXIterations) throws IllegalStateException {
+    private void log(String msg) {
+        if(logStream != null) try {
+            logStream.write((msg + "\r\n").getBytes("UTF-8"));
+        } catch (IOException ex) {
+            Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public double getVaccuracy() {
+        return vaccuracy;
+    }
+
+    public int getIteration() {
+        return iteration;
+    }
+
+    public void setIteration(int iteration) {
+        this.iteration = iteration;
+    }
+    
+    private double terror = 0, lastTError = 0, vaccuracy = 0;
+    private int iteration = 0, tthresholdRow = 0;
+    
+    public Thread train(TrainingSupplier trainingSupplier, int iterations) throws IllegalStateException {
         if(training) throw new IllegalStateException("Es wird bereits trainiert.");
         stopped = false;
         training = true;
         Thread trainThread;
         (trainThread = new Thread(() -> {
-        
-            int exampleCount = trainingSupplier.getExampleCount(), logIt = logEveryXIterations;
-            int example;
             long startTime = System.currentTimeMillis();
+            log("iteration time trainerror valaccuracy");
+            int exampleCount = trainingSupplier.getExampleCount();
+            int example;
             trainingSupplier.reset();
-            TrainingExample[] originalTrainingExamples = trainingSupplier.originalTrainingExamples();
-            System.out.println("Transformation: " + ((System.currentTimeMillis() / startTime) / (double) exampleCount) + " ms/example");
+            debug("Transformation: " + ((System.currentTimeMillis() - startTime) / (double) exampleCount) + " ms/example");
             net.prepareParallelBackprop(1);
-            System.out.println("Training with " + exampleCount + " examples per iteration.");
-            error = 0.0;
+            debug("Training with " + exampleCount + " examples per iteration.");
+            terror = 0.0;
+            vaccuracy = 0.0;
+            tthresholdRow = 0;
             NeuralLayer[] layers = net.getLayers();
             
             //Trainingsschleife
-            for(iteration = 0; !stopped && iteration < iterations; iteration++, logIt++) {
-                
+            int toIteration = iteration + iterations;
+            for(; !stopped && iteration < toIteration; iteration++) {
                 //Backpropagation; Alle Trainingsbeispiele ansehen
-                System.out.print("Backpropagating...");
+                debug("Starting iteration " + (iteration + 1));
+                debug("Backpropagating...");
+                long tempTime = System.currentTimeMillis();
+                startTime = tempTime;
                 for(example = 0; example < exampleCount; example++) {
                     TrainingExample ex = trainingSupplier.nextTrainingExample();
-                    backpropStepParallel(layers, ex);
+                    terror += NeuralMath.getError(backpropStepParallel(layers, ex), ex.getOut());
                     //Lernen/Gewichte updaten
                     for(NeuralLayer l : layers) l.accumulate(learningRate, regularizationRate, momentum);
                     if(stopped) break;
                 }
-                //error /= exampleCount;
-                //accuracy /= exampleCount;
-                //Forward Propagation wiederholen, um Error & Accuracy zu bestimmen
-                lastError = error;
-                error = 0.0;
-                accuracy = 0.0;
-                System.out.println("Determining error and accuracy...");
-                for(TrainingExample originalTrainingExample : originalTrainingExamples) {
-                    double[] out = net.triggerParallel(originalTrainingExample.getIn()).getOutput();
-                    error += NeuralMath.getRegularizedError(out, originalTrainingExample.getOut(), regularizationRate, net);
-                    if (NeuralMath.getPredictedLabel(out) == NeuralMath.getPredictedLabel(originalTrainingExample.getOut())) {
-                        accuracy++;
-                    }
-                }
-                error /= originalTrainingExamples.length;
-                accuracy /= originalTrainingExamples.length;
-                if(trainingProgressUpdated != null) trainingProgressUpdated.accept(new Pair<>(error, accuracy));
+                terror /= (double) exampleCount;
+                if(calcVaccuracy) vaccuracy = Tester.testFromSet(net, ImageContainer.Set.VALIDATION).getAccuracy();
                 
-                //Logging
-                if(logIt == logEveryXIterations) try {
-                    logIt = 0;
-                    double time = (System.currentTimeMillis() - startTime) / 1000.0;
-                    byte[] out = ((iteration + 1) + " " + error + " " + accuracy + " " + time + "\r\n").getBytes("UTF-8");
-                    if(errorLoggerStream != null) errorLoggerStream.write(out);
-                    System.out.write(out);
-                    //Kopie speichern
-                    /*ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("300-100_" + iteration + ".net")));
-                    oos.writeObject(net);
-                    oos.close();*/
-                } catch (IOException ex) {}
+                debug("Done. Error: " + terror + ". Val Accuracy: " + vaccuracy + ". BP Time: " + (System.currentTimeMillis() - tempTime) + "ms.");
                 
                 //Adaptive Lernrate
-                if(adaptiveLREnabled && lastError > 0.0) {
-                    if(lastError > error) learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_UP_MIN, Math.min(ADAPTIVE_LEARNING_RATE_UP_MAX, lastError / error));
-                    else learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_DOWN_MIN, Math.min(ADAPTIVE_LEARNING_RATE_DOWN_MAX, lastError / error));
+                if(adaptiveLREnabled && lastTError > 0.0) {
+                    if(lastTError > terror) learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_UP_MIN, Math.min(ADAPTIVE_LEARNING_RATE_UP_MAX, lastTError / terror));
+                    else learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_DOWN_MIN, Math.min(ADAPTIVE_LEARNING_RATE_DOWN_MAX, lastTError / terror));
+                    debug("Lernrate angepasst: " + learningRate + "\n");
                     if(learningRateUpdated != null) learningRateUpdated.run();
-                    System.out.println("Lernrate angepasst: " + learningRate);
                 }
+                log(iteration + " " + (startTime / 1000) + " " + terror + " " + vaccuracy + "\r\n");
+                if(trainingProgressUpdated != null) trainingProgressUpdated.accept(new Pair<>(terror, vaccuracy));
+                lastTError = terror;
+                terror = 0.0;
                 if(stopped) break;
             }
             //Ende der Schleife
-            System.out.println("Trained for " + iterations + " iterations. Error: " + error);
+            debug("Trained for " + iteration + " iterations. Error: " + lastTError);
+            if(logStream != null) try {
+                logStream.close();
+            } catch (IOException ex) { }
             this.training = false;
-            if(errorLoggerStream != null) try {
-                errorLoggerStream.close();
-            } catch (IOException ex) {
-                Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
-            }
         })).start();
         trainThread.setUncaughtExceptionHandler((Thread t, Throwable e) -> {
             e.printStackTrace();
@@ -168,8 +197,9 @@ public class Backpropagator {
         return trainThread;
     }
     
-    private TrainingExample[][] examples;
-    private CyclicBarrier trainingBarrier;
+    private TrainingExample[][] pbpExamples;
+    private CyclicBarrier pbpTrainingBarrier;
+    private long pbpStartTime;
     
     protected class TrainingRunnable implements Runnable {
         
@@ -184,7 +214,7 @@ public class Backpropagator {
         @Override
         public void run() {
             while(training) {
-                for(TrainingExample threadExample : examples[threadId]) {
+                for(TrainingExample threadExample : pbpExamples[threadId]) {
                     backpropStep(threadExample, threadId);
                 }
                 try {
@@ -194,7 +224,7 @@ public class Backpropagator {
                     break;
                 }
             }
-            System.out.println("Trainingsthread #" + threadId + " angehalten!");
+            debug("Trainingsthread #" + threadId + " angehalten!");
         }
         
     }
@@ -204,99 +234,76 @@ public class Backpropagator {
      *
      * @param trainingSupplier TrainingSupplier mit Trainingsbeispielen
      * @param iterations Wiederholungen (pro Wiederholung werden threadCount * examplesPerThread Trainigsbeispiele verwendet)
-     * @param errorLoggerStream OutputStream auf dem Iteration und Fehlerrate durch Leerzeichen separiert zeilenweise ausgegeben werden
      * @param threadCount Anzahl der zu verwendenden Backpropagation-Threads
      * @param examplesPerThread Trainingsbeispiele, die jeder Thread für die Backpropagation verwenden soll (empfohlen: examplesCount / threadCount; sollte nicht größer sein, da sonst Beispiele von mehreren Threads gleichzeitig trainiert werden)
      * @param staticExamples true, wenn für jeden Thread dauerhaft dieselben Trainingsbeispiele verwendet werden sollen (nur bei einer konstanten, endlichen Anzahl an Trainingsbeispielen sinnvoll)
      * @throws IllegalStateException Wenn bereits trainiert wird
      * @see Backpropagator#stopTraining() 
      */
-    public void trainParallel(TrainingSupplier trainingSupplier, int iterations, OutputStream errorLoggerStream, int threadCount, int examplesPerThread, boolean staticExamples) throws IllegalStateException {
+    public void trainParallel(TrainingSupplier trainingSupplier, int iterations, int threadCount, int examplesPerThread, boolean staticExamples) throws IllegalStateException {
         if(training) throw new IllegalStateException("Es wird bereits trainiert.");
         training = true;
         stopped = false;
         //Initialisieren
-        final long startTime = System.currentTimeMillis();
+        log("iteration time trainerror valaccuracy");
         int exampleCount = trainingSupplier.getExampleCount(), fullTrainingCycle = exampleCount / (examplesPerThread * threadCount);
         net.prepareParallelBackprop(threadCount);
-        examples = new TrainingExample[threadCount][examplesPerThread];
-        error = 0.0;
-        accuracy = 0.0;
-        lastError = -1.0;
+        pbpExamples = new TrainingExample[threadCount][examplesPerThread];
+        terror = 0.0;
+        lastTError = -1.0;
+        vaccuracy = 0.0;
         iteration = 0;
         trainingSupplier.reset();
         TrainingExample[] originalTrainingExamples = trainingSupplier.originalTrainingExamples();
         //Trainingsbeispiele laden
-        for(int t = 0; t < threadCount; t++) {
-            examples[t] = trainingSupplier.nextTrainingExamples(examplesPerThread);
-            //System.out.println("Example 1 for thread #" + t + " out: " + Arrays.toString(examples[t][0].getOut()) + " In: " + Arrays.toString(examples[t][0].getIn()));
-        }
+        for(int t = 0; t < threadCount; t++) pbpExamples[t] = trainingSupplier.nextTrainingExamples(examplesPerThread);
+        pbpStartTime = System.currentTimeMillis();
         //CyclicBarrier erstellen
-        trainingBarrier = new CyclicBarrier(threadCount, () -> {
+        pbpTrainingBarrier = new CyclicBarrier(threadCount, () -> {
             iteration++;
             //Lernen/Gewichte updaten
             Arrays.stream(net.getLayers()).forEach(l -> l.accumulate(learningRate, regularizationRate, momentum));
             
             //Alle Beispiele angesehen
             if(iteration % fullTrainingCycle == 0) {
-                //Forward Propagation wiederholen, um Error & Accuracy zu bestimmen
-                lastError = error;
-                error = 0.0;
-                accuracy = 0.0;
-                System.out.println("Determining error and accuracy...");
+                //Forward Propagation wiederholen, um Training Error zu bestimmen
+                //Der Trainingsfehler auf den transformierten Beispiele wäre wegen
+                //der konkurrierenden Threads viel schwieriger zu ermitteln und
+                //nicht aussagekräftiger
+                lastTError = terror;
+                terror = 0.0;
+                debug("Determining error and accuracy...");
                 for(TrainingExample originalTrainingExample : originalTrainingExamples) {
                     double[] out = net.triggerParallel(originalTrainingExample.getIn()).getOutput();
-                    error += NeuralMath.getRegularizedError(out, originalTrainingExample.getOut(), regularizationRate, net);
-                    if (NeuralMath.getPredictedLabel(out) == NeuralMath.getPredictedLabel(originalTrainingExample.getOut())) {
-                        accuracy++;
-                    }
+                    terror += NeuralMath.getRegularizedError(out, originalTrainingExample.getOut(), regularizationRate, net);
                 }
-                error /= originalTrainingExamples.length;
-                accuracy /= originalTrainingExamples.length;
-                if(trainingProgressUpdated != null) trainingProgressUpdated.accept(new Pair<>(error, accuracy));
-                
-                //Logging
-                try {
-                    double time = (System.currentTimeMillis() - startTime) / 1000.0;
-                    byte[] out = (iteration + " " + error + " " + accuracy + " " + time + "\r\n").getBytes("UTF-8");
-                    if(errorLoggerStream != null) errorLoggerStream.write(out);
-                    System.out.write(out);
-                    /*if(iteration % SAVE_EVERY_X_ITERATIONS == 0) {
-                        //Kopie speichern
-                        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("300-100_" + iteration + ".net")));
-                        oos.writeObject(net);
-                        oos.close();
-                    }*/
-                } catch (IOException ex) {}
+                terror /= originalTrainingExamples.length;
+                if(calcVaccuracy) vaccuracy = Tester.testFromSet(net, ImageContainer.Set.VALIDATION).getAccuracy();
                 //Adaptive Lernrate
-                if(adaptiveLREnabled && lastError > 0.0) {
-                    if(lastError > error) learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_UP_MIN, Math.min(ADAPTIVE_LEARNING_RATE_UP_MAX, lastError / error));
-                    else learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_DOWN_MIN, Math.min(ADAPTIVE_LEARNING_RATE_DOWN_MAX, lastError / error));
+                if(adaptiveLREnabled && lastTError > 0.0) {
+                    if(lastTError > terror) learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_UP_MIN, Math.min(ADAPTIVE_LEARNING_RATE_UP_MAX, lastTError / terror));
+                    else learningRate *= Math.max(ADAPTIVE_LEARNING_RATE_DOWN_MIN, Math.min(ADAPTIVE_LEARNING_RATE_DOWN_MAX, lastTError / terror));
+                    debug("Lernrate angepasst: " + learningRate + "\n");
                     if(learningRateUpdated != null) learningRateUpdated.run();
-                    System.out.println("Lernrate angepasst: " + learningRate);
                 }
+                //Logging
+                log(iteration + ((System.currentTimeMillis() - pbpStartTime) / 1000) + " " + terror + " " + vaccuracy + "\r\n");
+                pbpStartTime = System.currentTimeMillis();
+                if(trainingProgressUpdated != null) trainingProgressUpdated.accept(new Pair<>(terror, vaccuracy));
             }
             //Überprüfen ob Training gestoppt
             if(stopped || iteration >= iterations) {
-                System.out.println("Trainiert für " + iterations + " Iterationen.");
+                debug("Trainiert für " + iterations + " Iterationen.");
                 training = false;
-                if(errorLoggerStream != null) try {
-                    errorLoggerStream.close();
-                } catch (IOException ex) {
-                    Logger.getLogger(Backpropagator.class.getName()).log(Level.SEVERE, null, ex);
-                }
             }
             //Neue Trainingsbeispiele laden
-            if(!staticExamples) {
-                for(int t = 0; t < threadCount; t++) {
-                    examples[t] = trainingSupplier.nextTrainingExamples(examplesPerThread);
-                    //System.out.println("Example 1 for thread #" + t + " out: " + Arrays.toString(examples[t][0].getOut()) + " In: " + Arrays.toString(examples[t][0].getIn()));
-                }
-            }
+            if(!staticExamples)
+                for(int t = 0; t < threadCount; t++)
+                    pbpExamples[t] = trainingSupplier.nextTrainingExamples(examplesPerThread);
         });
         
         //Threads erstellen
-        for(int t = 0; t < threadCount; t++) new Thread(new TrainingRunnable(trainingBarrier, t), "TrainingThread#" + t).start();
+        for(int t = 0; t < threadCount; t++) new Thread(new TrainingRunnable(pbpTrainingBarrier, t), "TrainingThread#" + t).start();
     }
     
     /**

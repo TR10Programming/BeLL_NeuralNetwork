@@ -1,6 +1,7 @@
 package de.fk.neuralnetwork.data;
 
 import de.fk.neuralnetwork.NeuralNetwork;
+import de.fk.neuralnetwork.NeuralNetworkState;
 import de.fk.neuralnetwork.math.NeuralMath;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -48,6 +49,17 @@ public class Tester {
                 .map(p -> new Pair<>(p.getKey(), NeuralMath.getError(p.getValue().getOutput(), NeuralMath.getOutputForLabel(p.getKey().getLabel(), p.getValue().getOutput().length))))
                 .sorted((o1, o2) -> Double.compare(o2.getValue(), o1.getValue()))
                 .collect(Collectors.toMap(Pair::getKey, Pair::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+    }
+    
+    public static TestResult testFromSet(NeuralNetwork nn, ImageContainer.Set set) {
+        double error = 0.0, accuracy = 0.0;
+        List<LabeledImage> images = ImageContainer.getImages(set);
+        for(LabeledImage img : images) {
+            double[] out = nn.getOutputParallel(NeuralMath.flatten(img.getData()));
+            error += NeuralMath.getError(out, NeuralMath.getOutputForLabel(img.getLabel(), nn.getOutputLayer().getNeurons().length));
+            accuracy += (NeuralMath.getPredictedLabel(out) == img.getLabel()) ? 1.0 : 0.0;
+        }
+        return new TestResult(error / (double) images.size(), accuracy / (double) images.size());
     }
     
     /**

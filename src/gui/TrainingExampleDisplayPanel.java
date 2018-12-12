@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
 
@@ -18,26 +19,31 @@ public class TrainingExampleDisplayPanel extends JPanel {
     public static final Font FONT = new Font("Arial", Font.PLAIN, 12);
     public static final int IMAGE_SCALE = 2, PADDING = 20, SPACING = 10, SPACING_BOTTOM = 30;
     
-    private List<LabeledImage> imageList;
+    private ImageContainer.Set set;
+    private ArrayList<LabeledImage> customSet = null;
 
-    public TrainingExampleDisplayPanel(List<LabeledImage> imageList) {
+    public TrainingExampleDisplayPanel() {
         super(true);
-        this.imageList = imageList;
+        this.set = ImageContainer.Set.TRAINING;
+    }
+
+    public void setSet(ImageContainer.Set set) {
+        this.set = set;
     }
     
-    public void setImageList(List<LabeledImage> imageList) {
-        this.imageList = imageList;
-        repaint();
+    public void showCustomSet(ArrayList<LabeledImage> customSet) {
+        this.customSet = customSet;
     }
-
-    public List<LabeledImage> getImageList() {
-        return imageList;
+    
+    public void showDefaultSet() {
+        this.customSet = null;
     }
 
     @Override
     public void paint(Graphics grphcs) {
         Graphics2D g = (Graphics2D) grphcs;
         int pw = getWidth(), ph = getHeight();
+        List<LabeledImage> imageList = (customSet == null ? ImageContainer.getImages(set) : customSet);
         g.setFont(FONT);
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, pw, ph);

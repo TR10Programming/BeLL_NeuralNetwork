@@ -4,12 +4,18 @@ import de.fk.neuralnetwork.math.ActivationFunction;
 
 /**
  * Ein Neuron ohne Gewichte mit der Aktivierung 1. Für die Backpropagation
- * irrelevant.
+ * irrelevant. Dient als Platzhalter für einen Bias-Parameter und besitzt
+ * als solcher keine Vorgänger und entsprechend keine Gewichte.
  *
  * @author Felix
+ * @see Neuron
  */
 public class BiasNeuron implements Neuron {
     
+    /**
+     * Erstellt ein neues Bias-Neuron.
+     *
+     */
     public BiasNeuron() {
         
     }

@@ -7,6 +7,7 @@ import de.fk.neuralnetwork.math.NeuralMath;
  * Ein Neuron mit Gewichten zu seinem Vorgänger.
  *
  * @author Felix
+ * @see Neuron
  */
 public class BasicNeuron implements Neuron {
     

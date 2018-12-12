@@ -5,9 +5,22 @@ import de.fk.neuralnetwork.math.NeuralMath;
 import java.io.Serializable;
 
 /**
- * Repräsentiert ein Neuron in einem neuronalen Netz.
+ * Repräsentiert ein Neuron in einem neuronalen Netz. Ein Neuron ist die
+ * kleinste Einheit im neuronalen Netz. Es kann durch ein Eingabesignal
+ * aktiviert werden (siehe trigger()) und seinen Fehler (siehe getError()) bzw.
+ * Delta-Fehler (siehe getErrorDelta()) für den Backpropagation-Algorithmus
+ * ermitteln. Ein klassisches Neuron wird durch die BasicNeuron-Klasse
+ * respräsentiert und besitzt Gewichte zu allen Vorgängerneuronen, das
+ * Bias-Neuron hat hingegen keine klassischen Neuroneneigenschaften, sondern
+ * dient als Platzhalter für einen Bias-Parameter.
  *
  * @author Felix
+ * @see Neuron#trigger(double[], de.fk.neuralnetwork.math.ActivationFunction) trigger(..)
+ * @see Neuron#getError(int, de.fk.neuralnetwork.NeuralLayer, double[]) getError(..)
+ * @see Neuron#getErrorDelta(double, de.fk.neuralnetwork.math.ActivationFunction, double[]) getErrorDelta(..)
+ * @see NeuralLayer NeuralLayer
+ * @see BasicNeuron
+ * @see BiasNeuron
  */
 public interface Neuron extends Serializable {
     

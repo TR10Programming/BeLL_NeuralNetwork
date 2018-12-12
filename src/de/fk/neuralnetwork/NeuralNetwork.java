@@ -24,22 +24,20 @@ public class NeuralNetwork implements Serializable {
     /**
      * Generiert ein neuronales Netz mit den übergebenen Anzahlen an Neuronen.
      * Aller Layer außer dem Output Layer erhalten zusätzlich einen Bias.
-     *
-     * @param inputNeurons Anzahl der Eingabeneuronen
-     * @param outputNeurons Anzahl der Ausgabeneuronen
-     * @param neurons Liste mit Anzahlen der Hidden Layer Neuronen (mind. 1)
+     * 
+     * @param neurons Liste mit Anzahlen der Neuronen inkl. Ein- und Ausgabeschicht (mind. 1)
      */
-    public NeuralNetwork(int inputNeurons, int outputNeurons, int... neurons) {
-        layers = new NeuralLayer[neurons.length + 1];
+    public NeuralNetwork(int... neurons) {
+        layers = new NeuralLayer[neurons.length - 1];
         inputBias = true;
         //First Hidden Layer
-        layers[0] = new NeuralLayer(inputNeurons + 1, neurons[0], true);
+        layers[0] = new NeuralLayer(neurons[0] + 1, neurons[1], true);
         //Other Hidden Layers
-        for(int i = 1; i < neurons.length; i++) layers[i] = new NeuralLayer(neurons[i - 1] + 1, neurons[i], true);
+        for(int i = 1; i < neurons.length - 2; i++) layers[i] = new NeuralLayer(neurons[i] + 1, neurons[i + 1], true);
         //Output Layer
-        layers[neurons.length] = new NeuralLayer(neurons[neurons.length - 1] + 1, outputNeurons, false);
-        layers[neurons.length].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
-        this.inputNeurons = inputNeurons;
+        layers[neurons.length - 2] = new NeuralLayer(neurons[neurons.length - 2] + 1, neurons[neurons.length - 1], false);
+        layers[neurons.length - 2].setActivationFunction(ActivationFunction.DEFAULT_OUTPUT_LAYER_ACTIVATION_FUNCTION);
+        this.inputNeurons = neurons[0];
     }
     
     /**
@@ -119,6 +117,20 @@ public class NeuralNetwork implements Serializable {
         NeuralNetworkState state = new NeuralNetworkState();
         for(NeuralLayer layer : layers) state.addLayerActivations(vals = layer.triggerParallel(vals));
         return state;
+    }
+    
+    /**
+     * Lässt die Eingabedaten das neuronale Netz durchlaufen und gibt nur die
+     * Ausgabe zurück. (Nutzt parallele Streams)
+     *
+     * @param in Eingabeaktivierungen
+     * @return Ausgabeaktivierungen
+     */
+    public double[] getOutputParallel(double[] in) {
+        if(in.length != inputNeurons) throw new IllegalArgumentException("Es gibt " + inputNeurons + " Eingabeneuronen, es wurden aber " + in.length + " Werte eingegeben.");
+        double[] vals = NeuralMath.addBias(in);
+        for(NeuralLayer layer : layers) vals = layer.triggerParallel(vals);
+        return vals;
     }
     
     /**

@@ -18,8 +18,9 @@ public class LabeledImageTrainingSupplier extends TrainingSupplier {
     private List<LabeledImage> images;
     private Supplier<List<LabeledImage>> imageSupplier;
     private Random transformRdm;
+    private boolean autoTransform;
 
-    public LabeledImageTrainingSupplier(Supplier<List<LabeledImage>> imageSupplier, int imgWidth, int imgHeight, int classes) {
+    public LabeledImageTrainingSupplier(Supplier<List<LabeledImage>> imageSupplier, int imgWidth, int imgHeight, int classes, boolean autoTransform) {
         super(imgWidth * imgHeight, classes);
         this.imgWidth = imgWidth;
         this.imgHeight = imgHeight;
@@ -28,6 +29,7 @@ public class LabeledImageTrainingSupplier extends TrainingSupplier {
         this.imageSupplier = imageSupplier;
         this.images = imageSupplier.get();
         this.transformRdm = new Random();
+        this.autoTransform = autoTransform;
     }
 
     @Override
@@ -41,7 +43,7 @@ public class LabeledImageTrainingSupplier extends TrainingSupplier {
     public void reset() {
         index = 0;
         //1. Neue Transformationen anwenden
-        images = imageSupplier.get()
+        if(autoTransform) images = imageSupplier.get()
                 .parallelStream()
                 .map(limg -> limg.cloneAndTransform(transformRdm))
                 .collect(Collectors.toList());

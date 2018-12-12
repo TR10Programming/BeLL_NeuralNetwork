@@ -46,6 +46,8 @@ public class MnistImportDialog extends javax.swing.JDialog {
         lblExamplesCount = new javax.swing.JLabel();
         lblFormat = new javax.swing.JLabel();
         cbFormat = new javax.swing.JComboBox<>();
+        lblSet = new javax.swing.JLabel();
+        cbSet = new javax.swing.JComboBox<>();
 
         fileChooser.setCurrentDirectory(new java.io.File("D:\\Dokumente\\NetBeansProjects\\BeLL_NeuralNetwork"));
 
@@ -90,6 +92,10 @@ public class MnistImportDialog extends javax.swing.JDialog {
 
         cbFormat.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "MNIST", "EMNIST" }));
 
+        lblSet.setText("Zielset:");
+
+        cbSet.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Training Set", "Validation Set", "Test Set" }));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -97,9 +103,6 @@ public class MnistImportDialog extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(btnImport))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
@@ -110,16 +113,23 @@ public class MnistImportDialog extends javax.swing.JDialog {
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(lblImageSet)
                                     .addComponent(lblLabelSet)))
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                    .addComponent(lblFormat)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(cbFormat, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                    .addComponent(spExamplesCount, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(lblExamplesCount))))
-                        .addGap(0, 69, Short.MAX_VALUE)))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(spExamplesCount, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(lblExamplesCount))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(lblFormat, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGap(228, 228, 228)))
+                        .addGap(0, 69, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(cbFormat, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(lblSet, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(cbSet, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btnImport)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -142,7 +152,10 @@ public class MnistImportDialog extends javax.swing.JDialog {
                     .addComponent(lblFormat)
                     .addComponent(cbFormat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnImport)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblSet)
+                    .addComponent(cbSet, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnImport))
                 .addContainerGap())
         );
 
@@ -194,7 +207,7 @@ public class MnistImportDialog extends javax.swing.JDialog {
 
     private void btnImportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportActionPerformed
         try {
-            ImageContainer.readFromMnist(imageFile, labelFile, (int) spExamplesCount.getValue(), ImageContainer.FileFormat.values()[cbFormat.getSelectedIndex()]);
+            ImageContainer.readFromMnist(imageFile, labelFile, (int) spExamplesCount.getValue(), ImageContainer.FileFormat.values()[cbFormat.getSelectedIndex()], ImageContainer.Set.values()[cbSet.getSelectedIndex()]);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Es ist ein Fehler beim Einlesen der Dateien aufgetreten.");
             Logger.getLogger(MnistImportDialog.class.getName()).log(Level.SEVERE, null, ex);
@@ -212,11 +225,13 @@ public class MnistImportDialog extends javax.swing.JDialog {
     private javax.swing.JButton btnImport;
     private javax.swing.JButton btnLabelSet;
     private javax.swing.JComboBox<String> cbFormat;
+    private javax.swing.JComboBox<String> cbSet;
     private javax.swing.JFileChooser fileChooser;
     private javax.swing.JLabel lblExamplesCount;
     private javax.swing.JLabel lblFormat;
     private javax.swing.JLabel lblImageSet;
     private javax.swing.JLabel lblLabelSet;
+    private javax.swing.JLabel lblSet;
     private javax.swing.JSpinner spExamplesCount;
     // End of variables declaration//GEN-END:variables
 }

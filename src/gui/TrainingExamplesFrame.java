@@ -3,9 +3,16 @@ package gui;
 import de.fk.neuralnetwork.data.ImageContainer;
 import de.fk.neuralnetwork.data.LabeledImage;
 import de.fk.neuralnetwork.data.Tester;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  *
@@ -14,6 +21,7 @@ import java.util.Random;
 public class TrainingExamplesFrame extends javax.swing.JFrame {
 
     private MainFrame mfr;
+    private ImageContainer.Set set = ImageContainer.Set.TRAINING;
     
     /**
      * Creates new form TrainingExamplesFrame
@@ -37,31 +45,48 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        fileChooser = new javax.swing.JFileChooser();
         toolBar = new javax.swing.JToolBar();
+        cbSet = new javax.swing.JComboBox<>();
         lblState = new javax.swing.JLabel();
         btnBack = new javax.swing.JButton();
         tfPosition = new javax.swing.JTextField();
         btnForward = new javax.swing.JButton();
-        displayPanel = new TrainingExampleDisplayPanel(ImageContainer.getImages());
+        displayPanel = new TrainingExampleDisplayPanel();
         menuBar = new javax.swing.JMenuBar();
         mnFile = new javax.swing.JMenu();
+        miOpen = new javax.swing.JMenuItem();
         miImportMnist = new javax.swing.JMenuItem();
+        miSave = new javax.swing.JMenuItem();
         miReset = new javax.swing.JMenuItem();
         miClose = new javax.swing.JMenuItem();
         mnEdit = new javax.swing.JMenu();
         miShuffle = new javax.swing.JMenuItem();
         miTransformAll = new javax.swing.JMenuItem();
+        miMoveData = new javax.swing.JMenuItem();
         mnView = new javax.swing.JMenu();
         miShowAll = new javax.swing.JMenuItem();
         miShowIncorrect = new javax.swing.JMenuItem();
 
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Set-Archiv", "sets"));
+
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Trainingsbeispiele");
+        setTitle("Datenverwaltung");
 
         toolBar.setFloatable(false);
         toolBar.setRollover(true);
 
+        cbSet.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Training", "Validation", "Test" }));
+        cbSet.setPreferredSize(new java.awt.Dimension(50, 20));
+        cbSet.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cbSetActionPerformed(evt);
+            }
+        });
+        toolBar.add(cbSet);
+
         lblState.setText("    0 Trainingsbeispiele geladen.    ");
+        lblState.setPreferredSize(new java.awt.Dimension(200, 14));
         toolBar.add(lblState);
 
         btnBack.setText("<");
@@ -72,6 +97,7 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
 
         tfPosition.setText("0");
         tfPosition.setMaximumSize(new java.awt.Dimension(50, 2147483647));
+        tfPosition.setPreferredSize(new java.awt.Dimension(30, 20));
         toolBar.add(tfPosition);
 
         btnForward.setText(">");
@@ -84,7 +110,7 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
         displayPanel.setLayout(displayPanelLayout);
         displayPanelLayout.setHorizontalGroup(
             displayPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 436, Short.MAX_VALUE)
         );
         displayPanelLayout.setVerticalGroup(
             displayPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -93,7 +119,16 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
 
         mnFile.setText("Datei");
 
-        miImportMnist.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+        miOpen.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+        miOpen.setText("Archiv öffnen");
+        miOpen.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miOpenActionPerformed(evt);
+            }
+        });
+        mnFile.add(miOpen);
+
+        miImportMnist.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         miImportMnist.setText("Aus MNIST importieren");
         miImportMnist.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -101,6 +136,15 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
             }
         });
         mnFile.add(miImportMnist);
+
+        miSave.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
+        miSave.setText("Archiv speichern");
+        miSave.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miSaveActionPerformed(evt);
+            }
+        });
+        mnFile.add(miSave);
 
         miReset.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DELETE, java.awt.event.InputEvent.CTRL_MASK));
         miReset.setText("Trainingsbeispiele zurücksetzen");
@@ -141,6 +185,15 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
             }
         });
         mnEdit.add(miTransformAll);
+
+        miMoveData.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_M, java.awt.event.InputEvent.CTRL_MASK));
+        miMoveData.setText("Verschieben...");
+        miMoveData.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miMoveDataActionPerformed(evt);
+            }
+        });
+        mnEdit.add(miMoveData);
 
         menuBar.add(mnEdit);
 
@@ -187,7 +240,7 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void updateImages() {
-        lblState.setText("    " + getDisplayPanel().getImageList().size() + " Trainingsbeispiele geladen.    ");
+        lblState.setText("    " + ImageContainer.getImages(set).size() + " Trainingsbeispiele geladen.    ");
         displayPanel.repaint();
     }
     
@@ -197,7 +250,7 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_miImportMnistActionPerformed
 
     private void miResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miResetActionPerformed
-        ImageContainer.clear();
+        ImageContainer.clearAll();
         updateImages();
     }//GEN-LAST:event_miResetActionPerformed
 
@@ -206,35 +259,83 @@ public class TrainingExamplesFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_miCloseActionPerformed
 
     private void miShowIncorrectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miShowIncorrectActionPerformed
-        HashMap<LabeledImage, Double> imgs = Tester.findIncorrectlyClassified(mfr.getNet(), ImageContainer.getImages());
-        getDisplayPanel().setImageList(new ArrayList<>(imgs.keySet()));
+        HashMap<LabeledImage, Double> imgs = Tester.findIncorrectlyClassified(mfr.getNet(), ImageContainer.getImages(set));
+        getDisplayPanel().showCustomSet(new ArrayList<>(imgs.keySet()));
         updateImages();
     }//GEN-LAST:event_miShowIncorrectActionPerformed
 
     private void miShowAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miShowAllActionPerformed
-        getDisplayPanel().setImageList(ImageContainer.getImages());
+        getDisplayPanel().showDefaultSet();
         updateImages();
     }//GEN-LAST:event_miShowAllActionPerformed
 
     private void miShuffleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miShuffleActionPerformed
-        ImageContainer.shuffle();
-        getDisplayPanel().repaint();
+        ImageContainer.shuffleTrainingImages();
+        cbSet.setSelectedIndex(0);
+        set = ImageContainer.Set.TRAINING;
+        getDisplayPanel().showDefaultSet();
+        updateImages();
     }//GEN-LAST:event_miShuffleActionPerformed
 
     private void miTransformAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miTransformAllActionPerformed
-        ImageContainer.transformAll(new Random());
-        getDisplayPanel().setImageList(ImageContainer.getImages());
+        ImageContainer.transformTrainingImages(new Random());
+        getDisplayPanel().showDefaultSet();
+        updateImages();
     }//GEN-LAST:event_miTransformAllActionPerformed
+
+    private void cbSetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbSetActionPerformed
+        set = ImageContainer.Set.values()[cbSet.getSelectedIndex()];
+        getDisplayPanel().setSet(set);
+        getDisplayPanel().showDefaultSet();
+        updateImages();
+    }//GEN-LAST:event_cbSetActionPerformed
+
+    private void miMoveDataActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miMoveDataActionPerformed
+        new MoveDataDialog(this, true).setVisible(true);
+        updateImages();
+    }//GEN-LAST:event_miMoveDataActionPerformed
+
+    private void miSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miSaveActionPerformed
+        File f;
+        if(fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION && (f = fileChooser.getSelectedFile()) != null) {
+            String[] exts = f.getName().split("\\.");
+            if(!exts[exts.length - 1].equalsIgnoreCase("sets")) f = new File(f.toString() + ".sets");
+            try {
+                ImageContainer.saveToArchive(f);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Beim Speichern in ein Archiv ist ein Problem aufgetreten: " + ex.getMessage(), "Fehler", JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger(TrainingExamplesFrame.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_miSaveActionPerformed
+
+    private void miOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miOpenActionPerformed
+        File f;
+        if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION && (f = fileChooser.getSelectedFile()) != null) {
+            try {
+                ImageContainer.readFromArchive(f);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Beim Öffnen des Archivs ist ein Problem aufgetreten: " + ex.getMessage(), "Fehler", JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger(TrainingExamplesFrame.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            updateImages();
+        }
+    }//GEN-LAST:event_miOpenActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBack;
     private javax.swing.JButton btnForward;
+    private javax.swing.JComboBox<String> cbSet;
     private javax.swing.JPanel displayPanel;
+    private javax.swing.JFileChooser fileChooser;
     private javax.swing.JLabel lblState;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem miClose;
     private javax.swing.JMenuItem miImportMnist;
+    private javax.swing.JMenuItem miMoveData;
+    private javax.swing.JMenuItem miOpen;
     private javax.swing.JMenuItem miReset;
+    private javax.swing.JMenuItem miSave;
     private javax.swing.JMenuItem miShowAll;
     private javax.swing.JMenuItem miShowIncorrect;
     private javax.swing.JMenuItem miShuffle;

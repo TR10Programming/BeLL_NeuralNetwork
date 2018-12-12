@@ -44,7 +44,7 @@ public class MainFrame extends javax.swing.JFrame {
     public MainFrame() {
         createNeuralNet();
         initComponents();
-        bp = new Backpropagator(nn, 0.01, 0, 0);
+        bp = new Backpropagator(0, nn, 0.01, 0, 0);
         bp.setLearningRateUpdated(this::updateLearningRate);
         bp.setTrainingProgressUpdated(this::updateTrainingProgress);
         lblLearningRate.setText(bp.getLearningRate() + "");
@@ -59,7 +59,7 @@ public class MainFrame extends javax.swing.JFrame {
         if(bp != null) bp.stopTraining();
         //nn = new NeuralNetwork(1, 150, 28*28, 10);
         //nn = new NeuralNetwork(784, 300, 100, NUM_CLASSES);
-        nn = new NeuralNetwork(784, NUM_CLASSES, 600);
+        nn = new NeuralNetwork(784, 300, 100, 10);
         if(bp != null) bp.setNet(nn);
     }
     
@@ -111,6 +111,8 @@ public class MainFrame extends javax.swing.JFrame {
         cbAutoEndTraining = new javax.swing.JCheckBox();
         spTrainingIterations = new javax.swing.JSpinner();
         lblAutoEndTraining = new javax.swing.JLabel();
+        cbLogTestError = new javax.swing.JCheckBox();
+        cbAutoTransform = new javax.swing.JCheckBox();
         panelActions = new javax.swing.JPanel();
         btnTrain = new javax.swing.JButton();
         btnStopTraining = new javax.swing.JButton();
@@ -222,6 +224,16 @@ public class MainFrame extends javax.swing.JFrame {
 
         lblAutoEndTraining.setText("Iterationen automatisch beenden");
 
+        cbLogTestError.setText("MNIST Testfehler loggen");
+        cbLogTestError.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cbLogTestErrorActionPerformed(evt);
+            }
+        });
+
+        cbAutoTransform.setSelected(true);
+        cbAutoTransform.setText("Trainingsbeispiele zufällig transformieren");
+
         javax.swing.GroupLayout panelTrainingLayout = new javax.swing.GroupLayout(panelTraining);
         panelTraining.setLayout(panelTrainingLayout);
         panelTrainingLayout.setHorizontalGroup(
@@ -263,7 +275,12 @@ public class MainFrame extends javax.swing.JFrame {
                                     .addComponent(lblThreadCount)
                                     .addComponent(lblLearningRateLabel))
                                 .addGap(0, 0, Short.MAX_VALUE)))
-                        .addGap(14, 14, 14))))
+                        .addGap(14, 14, 14))
+                    .addGroup(panelTrainingLayout.createSequentialGroup()
+                        .addGroup(panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(cbAutoTransform)
+                            .addComponent(cbLogTestError))
+                        .addGap(0, 0, Short.MAX_VALUE))))
         );
         panelTrainingLayout.setVerticalGroup(
             panelTrainingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -296,6 +313,10 @@ public class MainFrame extends javax.swing.JFrame {
                     .addComponent(cbAutoEndTraining)
                     .addComponent(spTrainingIterations, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblAutoEndTraining))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(cbLogTestError)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(cbAutoTransform)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -394,18 +415,20 @@ public class MainFrame extends javax.swing.JFrame {
             .addGroup(panelLoggingLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(cbEnableLogging)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(108, 108, 108)
                 .addComponent(tfLogFile)
                 .addContainerGap())
         );
         panelLoggingLayout.setVerticalGroup(
             panelLoggingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelLoggingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(cbEnableLogging)
-                .addComponent(tfLogFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addGroup(panelLoggingLayout.createSequentialGroup()
+                .addGap(19, 19, 19)
+                .addGroup(panelLoggingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(cbEnableLogging)
+                    .addComponent(tfLogFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
 
-        panelNetwork.setBorder(javax.swing.BorderFactory.createTitledBorder("Neuronales Netz"));
+        panelNetwork.setBorder(javax.swing.BorderFactory.createTitledBorder("Architektur"));
 
         lblNeuronsLbl.setText("Neuronen:");
 
@@ -434,7 +457,6 @@ public class MainFrame extends javax.swing.JFrame {
 
         toolBar.setFloatable(false);
         toolBar.setRollover(true);
-        toolBar.add(progressBar);
 
         mbNetwork.setText("Netz");
 
@@ -467,10 +489,10 @@ public class MainFrame extends javax.swing.JFrame {
 
         menuBar.add(mbNetwork);
 
-        mbTraining.setText("Trainieren");
+        mbTraining.setText("Daten");
 
         miTrainingExamples.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
-        miTrainingExamples.setText("Trainingsbeispiele");
+        miTrainingExamples.setText("Datenverwaltung");
         miTrainingExamples.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 miTrainingExamplesActionPerformed(evt);
@@ -510,17 +532,18 @@ public class MainFrame extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(panelTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(panelActions, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(panelDisplay, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addComponent(panelLogging, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(panelNetwork, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
-            .addComponent(toolBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(panelLogging, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(panelTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(panelNetwork, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(layout.createSequentialGroup()
+                            .addComponent(panelActions, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(panelDisplay, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(toolBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -532,11 +555,13 @@ public class MainFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(panelNetwork, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(panelTraining, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(panelTraining, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(panelLogging, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(toolBar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(toolBar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
 
         pack();
@@ -548,7 +573,7 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_miTrainingExamplesActionPerformed
 
     private void btnTrainActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTrainActionPerformed
-        LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(ImageContainer::getImages, 28, 28, NUM_CLASSES);
+        LabeledImageTrainingSupplier trainingSupplier = new LabeledImageTrainingSupplier(() -> ImageContainer.getImages(ImageContainer.Set.TRAINING), 28, 28, NUM_CLASSES, cbAutoTransform.isSelected());
         
         FileOutputStream fos = null;
         if(cbEnableLogging.isSelected()) try {
@@ -559,8 +584,9 @@ public class MainFrame extends javax.swing.JFrame {
         }
         bp.setNet(nn);
         //bp.train(trainingSupplier, 500, fos, 1);
-        if(stochasticGD) bp.train(trainingSupplier, cbAutoEndTraining.isSelected() ? (int) spTrainingIterations.getValue() : Integer.MAX_VALUE, fos, 1);
-        else bp.trainParallel(trainingSupplier, cbAutoEndTraining.isSelected() ? (int) spTrainingIterations.getValue() : Integer.MAX_VALUE, fos, threadCount, batchSize / threadCount, false);
+        bp.setLogStream(fos);
+        if(stochasticGD) bp.train(trainingSupplier, cbAutoEndTraining.isSelected() ? (int) spTrainingIterations.getValue() : Integer.MAX_VALUE);
+        else bp.trainParallel(trainingSupplier, cbAutoEndTraining.isSelected() ? (int) spTrainingIterations.getValue() : Integer.MAX_VALUE, threadCount, batchSize / threadCount, false);
     }//GEN-LAST:event_btnTrainActionPerformed
 
     private void btnStopTrainingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStopTrainingActionPerformed
@@ -674,6 +700,23 @@ public class MainFrame extends javax.swing.JFrame {
         slThreadCount.setEnabled(!stochasticGD);
         spExamplesPerThread.setEnabled(!stochasticGD);
     }//GEN-LAST:event_cbStochasticGradientDescentActionPerformed
+
+    private void cbLogTestErrorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbLogTestErrorActionPerformed
+        if(cbLogTestError.isSelected()) {
+            int imgs = 0, lbls = 0;
+            try {
+                imgs = ImageContainer.validateMnistImageFile("t10k-images.idx3-ubyte");
+                lbls = ImageContainer.validateMnistLabelFile("t10k-labels.idx1-ubyte");
+            } catch (IOException ex) {
+                Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            if(imgs > 0 && imgs == lbls) JOptionPane.showMessageDialog(this, "MNIST Testset gefunden. Testfehler wird geloggt.");
+            else {
+                JOptionPane.showMessageDialog(this, "MNIST Testset nicht gefunden (Bilder: " + imgs + ", Labels: " + lbls + ")");
+                cbLogTestError.setSelected(false);
+            }
+        }
+    }//GEN-LAST:event_cbLogTestErrorActionPerformed
     
     /**
      * @param args the command line arguments
@@ -710,7 +753,9 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnUpdateLearningRate;
     private javax.swing.JCheckBox cbAdaptiveLearningRate;
     private javax.swing.JCheckBox cbAutoEndTraining;
+    private javax.swing.JCheckBox cbAutoTransform;
     private javax.swing.JCheckBox cbEnableLogging;
+    private javax.swing.JCheckBox cbLogTestError;
     private javax.swing.JCheckBox cbStochasticGradientDescent;
     private javax.swing.JLabel lblAccuracy;
     private javax.swing.JLabel lblAccuracyLbl;

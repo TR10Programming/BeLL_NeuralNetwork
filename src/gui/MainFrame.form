@@ -66,7 +66,7 @@
         </Menu>
         <Menu class="javax.swing.JMenu" name="mbTraining">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Trainieren"/>
+            <Property name="text" type="java.lang.String" value="Daten"/>
           </Properties>
           <SubComponents>
             <MenuItem class="javax.swing.JMenuItem" name="miTrainingExamples">
@@ -74,7 +74,7 @@
                 <Property name="accelerator" type="javax.swing.KeyStroke" editor="org.netbeans.modules.form.editors.KeyStrokeEditor">
                   <KeyStroke key="Ctrl+T"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="Trainingsbeispiele"/>
+                <Property name="text" type="java.lang.String" value="Datenverwaltung"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="miTrainingExamplesActionPerformed"/>
@@ -140,20 +140,22 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="panelTraining" max="32767" attributes="0"/>
-                  <Group type="102" attributes="0">
-                      <Component id="panelActions" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace max="-2" attributes="0"/>
-                      <Component id="panelDisplay" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                  <Component id="progressBar" max="32767" attributes="0"/>
+                  <Group type="103" groupAlignment="1" max="-2" attributes="0">
+                      <Component id="panelLogging" alignment="0" max="32767" attributes="0"/>
+                      <Component id="panelTraining" max="32767" attributes="0"/>
+                      <Component id="panelNetwork" alignment="0" max="32767" attributes="0"/>
+                      <Group type="102" attributes="0">
+                          <Component id="panelActions" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="panelDisplay" min="-2" max="-2" attributes="0"/>
+                      </Group>
                   </Group>
-                  <Component id="panelLogging" alignment="0" max="32767" attributes="0"/>
-                  <Component id="panelNetwork" alignment="0" max="32767" attributes="0"/>
               </Group>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
+              <Component id="toolBar" max="32767" attributes="0"/>
           </Group>
-          <Component id="toolBar" alignment="0" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
@@ -167,11 +169,14 @@
               <EmptySpace max="-2" attributes="0"/>
               <Component id="panelNetwork" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="panelTraining" max="32767" attributes="0"/>
+              <Component id="panelTraining" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="panelLogging" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
-              <Component id="toolBar" min="-2" pref="25" max="-2" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="toolBar" min="-2" pref="25" max="-2" attributes="0"/>
+                  <Component id="progressBar" min="-2" max="-2" attributes="0"/>
+              </Group>
           </Group>
       </Group>
     </DimensionLayout>
@@ -238,6 +243,13 @@
                           </Group>
                           <EmptySpace min="-2" pref="14" max="-2" attributes="0"/>
                       </Group>
+                      <Group type="102" attributes="0">
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Component id="cbAutoTransform" min="-2" max="-2" attributes="0"/>
+                              <Component id="cbLogTestError" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      </Group>
                   </Group>
               </Group>
           </Group>
@@ -277,6 +289,10 @@
                       <Component id="spTrainingIterations" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="lblAutoEndTraining" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                  <Component id="cbLogTestError" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                  <Component id="cbAutoTransform" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="32767" attributes="0"/>
               </Group>
           </Group>
@@ -391,6 +407,20 @@
         <Component class="javax.swing.JLabel" name="lblAutoEndTraining">
           <Properties>
             <Property name="text" type="java.lang.String" value="Iterationen automatisch beenden"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="cbLogTestError">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="MNIST Testfehler loggen"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="cbLogTestErrorActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="cbAutoTransform">
+          <Properties>
+            <Property name="selected" type="boolean" value="true"/>
+            <Property name="text" type="java.lang.String" value="Trainingsbeispiele zuf&#xe4;llig transformieren"/>
           </Properties>
         </Component>
       </SubComponents>
@@ -541,7 +571,7 @@
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="cbEnableLogging" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="108" max="-2" attributes="0"/>
                   <Component id="tfLogFile" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
@@ -549,9 +579,12 @@
         </DimensionLayout>
         <DimensionLayout dim="1">
           <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="cbEnableLogging" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="tfLogFile" alignment="3" min="-2" max="-2" attributes="0"/>
+              <Group type="102" attributes="0">
+                  <EmptySpace min="-2" pref="19" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="cbEnableLogging" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="tfLogFile" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
               </Group>
           </Group>
         </DimensionLayout>
@@ -574,7 +607,7 @@
       <Properties>
         <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
           <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
-            <TitledBorder title="Neuronales Netz"/>
+            <TitledBorder title="Architektur"/>
           </Border>
         </Property>
       </Properties>
@@ -624,10 +657,8 @@
       </Properties>
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBoxLayout"/>
-      <SubComponents>
-        <Component class="javax.swing.JProgressBar" name="progressBar">
-        </Component>
-      </SubComponents>
     </Container>
+    <Component class="javax.swing.JProgressBar" name="progressBar">
+    </Component>
   </SubComponents>
 </Form>

@@ -70,8 +70,16 @@ public class LabeledImage {
         return data;
     }
 
+    public void setData(double[][] data) {
+        this.data = data;
+    }
+
     public int getLabel() {
         return label;
+    }
+
+    public void setLabel(int label) {
+        this.label = label;
     }
 
     @Override
